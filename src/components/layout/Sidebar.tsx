@@ -28,7 +28,6 @@ type NavItem = {
   href: string;
   icon: (p: { size?: number; color?: string }) => React.ReactNode;
   match: (path: string) => boolean;
-  badge?: string;
 };
 
 type Section = { title: string; items: NavItem[] };
@@ -139,7 +138,6 @@ const SECTIONS: Section[] = [
         href: "/notifications",
         icon: NotificationsIcon,
         match: (p) => p.startsWith("/notifications"),
-        badge: "12",
       },
       {
         label: "Support Tickets",
@@ -179,7 +177,7 @@ function closeNav() {
   if (el instanceof HTMLInputElement) el.checked = false;
 }
 
-export function Sidebar() {
+export function Sidebar({ unreadNotifications = 0 }: { unreadNotifications?: number }) {
   const pathname = usePathname();
 
   return (
@@ -226,9 +224,9 @@ export function Sidebar() {
                     color: active ? "var(--color-primary)" : "#5C5C5C",
                   })}
                   {item.label}
-                  {item.badge && (
+                  {item.label === "Notifications" && unreadNotifications > 0 && (
                     <span className="ml-auto rounded-full bg-[#FFF0E1] px-[7px] py-[1px] text-[11px] font-bold text-[var(--color-primary)]">
-                      {item.badge}
+                      {unreadNotifications}
                     </span>
                   )}
                 </Link>

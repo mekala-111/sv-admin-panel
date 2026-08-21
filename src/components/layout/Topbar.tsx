@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { SlotImage } from "../ui/SlotImage";
 import {
@@ -9,8 +7,9 @@ import {
   SearchIcon,
   SupportIcon,
 } from "../ui/Icons";
+import { logout, type AdminUser } from "@/lib/auth";
 
-export function Topbar() {
+export function Topbar({ user }: { user: AdminUser | null }) {
   return (
     <div className="flex h-[60px] shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-4 md:h-[72px] md:gap-5 md:px-7">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -29,13 +28,12 @@ export function Topbar() {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3 md:gap-[22px]">
-        <div className="relative text-[var(--color-text-muted)]">
+        <Link href="/notifications" className="relative text-[var(--color-text-muted)]">
           <NotificationsIcon size={21} />
-          <span className="absolute -right-2 -top-1.5 rounded-lg bg-[var(--color-secondary)] px-[5px] text-[10px] font-bold text-white">
-            12
-          </span>
-        </div>
-        <SupportIcon size={21} color="#707070" />
+        </Link>
+        <Link href="/support">
+          <SupportIcon size={21} color="#707070" />
+        </Link>
         <div className="hidden h-[26px] w-px bg-[var(--color-border)] sm:block" />
         <Link href="/profile" className="flex items-center gap-2.5">
           <SlotImage
@@ -46,14 +44,22 @@ export function Topbar() {
           />
           <div className="hidden text-left md:block">
             <div className="text-[13px] font-bold text-[var(--color-text)]">
-              Super Admin
+              {user?.name ?? "Admin"}
             </div>
             <div className="text-[11px] text-[var(--color-text-muted)]">
-              Super Admin
+              {user?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
             </div>
           </div>
           <ChevronDownIcon size={14} className="hidden sm:block" />
         </Link>
+        <form action={logout}>
+          <button
+            type="submit"
+            className="rounded-[7px] border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -1,36 +1,29 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
-import {
-  listEvents,
-  listRecordings,
-  listServers,
-  listTransactions,
-  listVendors,
-  listCustomers,
-  listWalletTx,
-} from "@/lib/db";
+import { TableCard, Thead, Tr, Td, EmptyState } from "@/components/ui/Table";
+import { fetchRevenueSummary, fetchTopVendors } from "@/lib/hooks/useAdminReports";
+import { fetchPayments } from "@/lib/hooks/useAdminPayments";
+import { fetchVendors } from "@/lib/hooks/useAdminVendors";
+import { fetchCustomers } from "@/lib/hooks/useAdminCustomers";
+import { fetchEvents } from "@/lib/hooks/useAdminEvents";
+import { fetchRecordings, formatBytes } from "@/lib/hooks/useAdminRecordings";
+import { fetchVendorNameMap, fetchCustomerNameMap } from "@/lib/hooks/useNameMaps";
 
-const REPORT_TYPES = [
-  "Revenue",
-  "Vendor",
-  "Customer",
-  "Event",
-  "Streaming",
-  "Payment",
-  "Wallet",
-  "Storage",
-];
+const REPORT_TYPES = ["Revenue", "Vendor", "Customer", "Event", "Storage"];
+
+function toParam(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
+
+function statusLabel(status: string): string {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
 
 export default async function ReportsPage({
   searchParams,
 }: PageProps<"/reports">) {
   const sp = await searchParams;
-  const typeParam = Array.isArray(sp.type) ? sp.type[0] : sp.type;
-  const type = REPORT_TYPES.includes(typeParam ?? "")
-    ? (typeParam as string)
-    : "Revenue";
+  const typeParam = toParam(sp.type);
+  const type = REPORT_TYPES.includes(typeParam) ? typeParam : "Revenue";
 
   return (
     <div>
@@ -38,31 +31,23 @@ export default async function ReportsPage({
         Reports
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
         {REPORT_TYPES.map((r) => {
           const active = r === type;
           return (
-            <Link
+            <a
               key={r}
               href={`/reports?type=${r}`}
               className="rounded-xl bg-white p-4 text-center text-[13px] font-bold"
               style={{
-                border: active
-                  ? "2px solid var(--color-primary)"
-                  : "1px solid var(--color-border)",
+                border: active ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
                 color: active ? "var(--color-primary)" : "var(--color-text)",
               }}
             >
               {r} Report
-            </Link>
+            </a>
           );
         })}
-      </div>
-
-      <div className="mb-3 flex flex-wrap justify-end gap-2">
-        <Button variant="secondary">Export CSV</Button>
-        <Button variant="secondary">Export Excel</Button>
-        <Button variant="primary">Export PDF</Button>
       </div>
 
       <ReportTable type={type} />
@@ -70,56 +55,68 @@ export default async function ReportsPage({
   );
 }
 
-function ReportTable({ type }: { type: string }) {
-  if (type === "Revenue" || type === "Payment") {
-    const rows = listTransactions();
+async function ReportTable({ type }: { type: string }) {
+  if (type === "Revenue") {
+    const [summary, payments, customerNames] = await Promise.all([
+      fetchRevenueSummary().catch(() => null),
+      fetchPayments({ status: "SUCCESS" }).catch(() => []),
+      fetchCustomerNameMap().catch(() => new Map<string, string>()),
+    ]);
     return (
-      <TableCard>
-        {type === "Revenue" ? (
-          <Thead columns={["TXN ID", "CUSTOMER", "VENDOR", "AMOUNT", "STATUS"]} />
+      <>
+        {summary ? (
+          <div className="mb-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+              <div className="mb-1 text-xs text-[var(--color-text-muted)]">Total Revenue</div>
+              <div className="text-xl font-extrabold text-[var(--color-text)]">₹{summary.totalRevenue.toLocaleString("en-IN")}</div>
+            </div>
+            <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+              <div className="mb-1 text-xs text-[var(--color-text-muted)]">Successful Payments</div>
+              <div className="text-xl font-extrabold text-[var(--color-text)]">{summary.successfulPayments}</div>
+            </div>
+          </div>
+        ) : null}
+        {payments.length === 0 ? (
+          <EmptyState message="No successful payments yet." />
         ) : (
-          <Thead columns={["TXN ID", "GATEWAY", "AMOUNT", "STATUS"]} />
+          <TableCard>
+            <Thead columns={["CUSTOMER", "AMOUNT", "GATEWAY", "DATE"]} />
+            <tbody>
+              {payments.map((tx) => (
+                <Tr key={tx.id}>
+                  <Td>{tx.customerId ? customerNames.get(tx.customerId) ?? "–" : "–"}</Td>
+                  <Td strong>₹{tx.amount.toLocaleString("en-IN")}</Td>
+                  <Td muted>{tx.gateway}</Td>
+                  <Td muted>{new Date(tx.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Td>
+                </Tr>
+              ))}
+            </tbody>
+          </TableCard>
         )}
-        <tbody>
-          {rows.map((tx) => (
-            <Tr key={tx.id}>
-              <Td mono muted>
-                {tx.id}
-              </Td>
-              {type === "Revenue" ? (
-                <>
-                  <Td>{tx.customer}</Td>
-                  <Td muted>{tx.vendor}</Td>
-                </>
-              ) : (
-                <Td muted>{tx.gateway}</Td>
-              )}
-              <Td strong>{tx.amount}</Td>
-              <Td>
-                <StatusBadge status={tx.status} />
-              </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </TableCard>
+      </>
     );
   }
 
   if (type === "Vendor") {
-    const rows = listVendors();
-    return (
+    const [topVendors, vendorsResult] = await Promise.all([
+      fetchTopVendors().catch(() => []),
+      fetchVendors({ page: 1 }).catch(() => ({ items: [], page: 1, totalPages: 1, total: 0 })),
+    ]);
+    const vendors = vendorsResult.items;
+    return vendors.length === 0 ? (
+      <EmptyState message="No vendors yet." />
+    ) : (
       <TableCard>
-        <Thead columns={["VENDOR", "EVENTS", "CUSTOMERS", "REVENUE", "STATUS"]} />
+        <Thead columns={["VENDOR", "EVENTS", "STATUS", "CREATED"]} />
         <tbody>
-          {rows.map((v) => (
+          {vendors.map((v) => (
             <Tr key={v.id}>
-              <Td strong>{v.name}</Td>
-              <Td>{v.events}</Td>
-              <Td>{v.customers}</Td>
-              <Td strong>{v.revenue}</Td>
+              <Td strong>{v.companyName}</Td>
+              <Td>{topVendors.find((tv) => tv.vendorId === v.id)?.eventCount ?? 0}</Td>
               <Td>
-                <StatusBadge status={v.status} />
+                <StatusBadge status={statusLabel(v.status)} />
               </Td>
+              <Td muted>{new Date(v.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</Td>
             </Tr>
           ))}
         </tbody>
@@ -128,17 +125,21 @@ function ReportTable({ type }: { type: string }) {
   }
 
   if (type === "Customer") {
-    const rows = listCustomers();
-    return (
+    const [{ items }, vendorNames] = await Promise.all([
+      fetchCustomers({ page: 1 }).catch(() => ({ items: [], page: 1, totalPages: 1, total: 0 })),
+      fetchVendorNameMap().catch(() => new Map<string, string>()),
+    ]);
+    return items.length === 0 ? (
+      <EmptyState message="No customers yet." />
+    ) : (
       <TableCard>
-        <Thead columns={["CUSTOMER", "VENDOR", "EVENTS", "SPENDING"]} />
+        <Thead columns={["CUSTOMER", "VENDOR", "EVENTS"]} />
         <tbody>
-          {rows.map((c) => (
+          {items.map((c) => (
             <Tr key={c.id}>
               <Td strong>{c.name}</Td>
-              <Td muted>{c.vendor}</Td>
-              <Td>{c.events}</Td>
-              <Td strong>{c.spending}</Td>
+              <Td muted>{vendorNames.get(c.vendorId) ?? "–"}</Td>
+              <Td>{c.eventsCount}</Td>
             </Tr>
           ))}
         </tbody>
@@ -147,63 +148,24 @@ function ReportTable({ type }: { type: string }) {
   }
 
   if (type === "Event") {
-    const rows = listEvents();
-    return (
+    const [{ items }, vendorNames] = await Promise.all([
+      fetchEvents({ limit: 100 }).catch(() => ({ items: [], page: 1, totalPages: 1, total: 0 })),
+      fetchVendorNameMap().catch(() => new Map<string, string>()),
+    ]);
+    return items.length === 0 ? (
+      <EmptyState message="No events yet." />
+    ) : (
       <TableCard>
-        <Thead columns={["EVENT", "VENDOR", "VIEWERS", "REVENUE", "STATUS"]} />
+        <Thead columns={["EVENT", "VENDOR", "DATE", "STATUS"]} />
         <tbody>
-          {rows.map((ev) => (
+          {items.map((ev) => (
             <Tr key={ev.id}>
-              <Td strong>{ev.name}</Td>
-              <Td muted>{ev.vendor}</Td>
-              <Td>{ev.viewers.toLocaleString("en-IN")}</Td>
-              <Td strong>{ev.revenue}</Td>
+              <Td strong>{ev.eventName}</Td>
+              <Td muted>{vendorNames.get(ev.vendorId) ?? "–"}</Td>
+              <Td muted>{ev.eventDate ? new Date(ev.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "–"}</Td>
               <Td>
-                <StatusBadge status={ev.status} />
+                <StatusBadge status={statusLabel(ev.status)} />
               </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </TableCard>
-    );
-  }
-
-  if (type === "Streaming") {
-    const rows = listServers();
-    return (
-      <TableCard>
-        <Thead columns={["SERVER", "LOCATION", "CPU", "RAM", "STATUS"]} />
-        <tbody>
-          {rows.map((s) => (
-            <Tr key={s.name}>
-              <Td strong>{s.name}</Td>
-              <Td muted>{s.location}</Td>
-              <Td>{s.cpu}%</Td>
-              <Td>{s.ram}%</Td>
-              <Td>
-                <span className="font-semibold text-[var(--color-success)]">
-                  {s.status}
-                </span>
-              </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </TableCard>
-    );
-  }
-
-  if (type === "Wallet") {
-    const rows = listWalletTx();
-    return (
-      <TableCard>
-        <Thead columns={["TYPE", "VENDOR", "AMOUNT", "DATE"]} />
-        <tbody>
-          {rows.map((w, i) => (
-            <Tr key={i}>
-              <Td strong>{w.type}</Td>
-              <Td muted>{w.vendor}</Td>
-              <Td>{w.amount}</Td>
-              <Td muted>{w.date}</Td>
             </Tr>
           ))}
         </tbody>
@@ -212,17 +174,19 @@ function ReportTable({ type }: { type: string }) {
   }
 
   // Storage
-  const rows = listRecordings();
-  return (
+  const { items } = await fetchRecordings({ page: 1 }).catch(() => ({ items: [], page: 1, totalPages: 1, total: 0 }));
+  return items.length === 0 ? (
+    <EmptyState message="No recordings yet." />
+  ) : (
     <TableCard>
-      <Thead columns={["EVENT", "VENDOR", "FILE SIZE", "SERVER"]} />
+      <Thead columns={["EVENT ID", "SIZE", "DURATION", "STATUS"]} />
       <tbody>
-        {rows.map((rc, i) => (
-          <Tr key={i}>
-            <Td strong>{rc.event}</Td>
-            <Td muted>{rc.vendor}</Td>
-            <Td>{rc.size}</Td>
-            <Td muted>{rc.storage}</Td>
+        {items.map((rc) => (
+          <Tr key={rc.id}>
+            <Td mono muted>{rc.eventId}</Td>
+            <Td strong>{formatBytes(rc.sizeBytes)}</Td>
+            <Td muted>{Math.round(rc.durationSec / 60)} min</Td>
+            <Td muted>{rc.status}</Td>
           </Tr>
         ))}
       </tbody>

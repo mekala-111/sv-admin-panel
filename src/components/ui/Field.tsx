@@ -34,12 +34,14 @@ export function TextField({
   placeholder,
   type = "text",
   required = false,
+  defaultValue,
 }: {
   label: string;
   name: string;
   placeholder?: string;
   type?: string;
   required?: boolean;
+  defaultValue?: string | number;
 }) {
   return (
     <div>
@@ -55,6 +57,7 @@ export function TextField({
         type={type}
         placeholder={placeholder}
         required={required}
+        defaultValue={defaultValue}
         className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
       />
     </div>
@@ -66,11 +69,13 @@ export function TextAreaField({
   name,
   placeholder,
   required = false,
+  defaultValue,
 }: {
   label: string;
   name: string;
   placeholder?: string;
   required?: boolean;
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -86,6 +91,7 @@ export function TextAreaField({
         placeholder={placeholder}
         required={required}
         rows={3}
+        defaultValue={defaultValue}
         className="w-full resize-none rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
       />
     </div>
@@ -96,10 +102,12 @@ export function SelectField({
   label,
   name,
   options,
+  defaultValue,
 }: {
   label: string;
   name: string;
   options: string[];
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -112,6 +120,7 @@ export function SelectField({
       <select
         id={name}
         name={name}
+        defaultValue={defaultValue}
         className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
       >
         {options.map((o) => (

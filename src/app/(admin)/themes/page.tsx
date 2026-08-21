@@ -2,32 +2,30 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { PillTabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { SlotImage } from "@/components/ui/SlotImage";
-import { listThemes } from "@/lib/db";
+import { fetchThemes, fetchThemeCategories } from "@/lib/hooks/useAdminThemes";
+import { duplicateThemeAction } from "@/lib/themes";
 
-const CATEGORIES = [
-  "All",
-  "Wedding",
-  "Corporate",
-  "Concert",
-  "Spiritual",
-  "Sports",
-  "Birthday",
-  "Private",
-  "Minimal",
-];
+function statusLabel(status: string): string {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
 
 export default async function ThemesPage({
   searchParams,
 }: PageProps<"/themes">) {
   const sp = await searchParams;
   const catParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
-  const category = CATEGORIES.includes(catParam ?? "")
-    ? (catParam as string)
-    : "All";
 
-  const themes = listThemes().filter(
-    (t) => category === "All" || t.category === category
+  const [themes, categories] = await Promise.all([
+    fetchThemes().catch(() => []),
+    fetchThemeCategories().catch(() => []),
+  ]);
+
+  const categoryFilters = ["All", ...categories.map((c) => c.name)];
+  const category = categoryFilters.includes(catParam ?? "") ? (catParam as string) : "All";
+
+  const categoryById = new Map(categories.map((c) => [c.id, c.name]));
+  const filtered = themes.filter(
+    (t) => category === "All" || categoryById.get(t.categoryId ?? "") === category
   );
 
   return (
@@ -37,57 +35,57 @@ export default async function ThemesPage({
           Theme Library
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <Button href="/themes/categories" variant="secondary">
-            Categories
-          </Button>
-          <Button href="/themes/assignments" variant="secondary">
-            Assignments
-          </Button>
-          <Button href="/themes/0/edit" variant="primary">
-            + Create Theme
-          </Button>
+          <Button href="/themes/categories" variant="secondary">Categories</Button>
+          <Button href="/themes/assignments" variant="secondary">Assignments</Button>
+          <Button href="/themes/0/edit" variant="primary">+ Create Theme</Button>
         </div>
       </div>
 
-      <PillTabs basePath="/themes" options={CATEGORIES} current={category} />
+      <PillTabs basePath="/themes" options={categoryFilters} current={category} />
 
-      <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
-        {themes.map((t) => (
-          <div
-            key={t.id}
-            className="overflow-hidden rounded-[14px] border border-[var(--color-border)] bg-white"
-          >
-            <SlotImage
-              slotId={t.imgId}
-              label="Theme preview"
-              shape="rect"
-              className="h-[120px] w-full"
-            />
-            <div className="p-3.5">
-              <div className="mb-1 flex items-center justify-between">
-                <div className="text-[14px] font-bold text-[var(--color-text)]">
-                  {t.name}
+      {filtered.length === 0 ? (
+        <div className="rounded-[14px] border border-dashed border-[var(--color-border)] p-16 text-center text-[13px] text-[var(--color-text-faint)]">
+          No themes yet. Create your first theme to get started.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
+          {filtered.map((t) => (
+            <div key={t.id} className="overflow-hidden rounded-[14px] border border-[var(--color-border)] bg-white">
+              <div
+                className="flex h-[120px] w-full items-center justify-center bg-[#F0EEEA] text-[11px] font-mono uppercase text-[#9C9890]"
+                style={t.previewImage ? { backgroundImage: `url(${t.previewImage})`, backgroundSize: "cover" } : undefined}
+              >
+                {!t.previewImage && "preview"}
+              </div>
+              <div className="p-3.5">
+                <div className="mb-1 flex items-center justify-between">
+                  <div className="text-[14px] font-bold text-[var(--color-text)]">{t.name}</div>
+                  <StatusBadge status={statusLabel(t.status)} />
                 </div>
-                <StatusBadge status={t.status} />
-              </div>
-              <div className="mb-3 text-xs text-[var(--color-text-muted)]">
-                {t.category} &middot; Used by {t.vendors} vendors
-              </div>
-              <div className="flex gap-2">
-                <Link
-                  href={`/themes/${t.id}/edit`}
-                  className="flex-1 rounded-[7px] border border-[var(--color-border)] bg-white py-1.5 text-center text-xs font-semibold text-[var(--color-primary)]"
-                >
-                  Edit
-                </Link>
-                <button className="flex-1 rounded-[7px] border border-[var(--color-border)] bg-white py-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
-                  Duplicate
-                </button>
+                <div className="mb-3 text-xs text-[var(--color-text-muted)]">
+                  {t.categoryId ? categoryById.get(t.categoryId) ?? "Uncategorized" : "Uncategorized"}
+                </div>
+                <div className="flex gap-2">
+                  <Link
+                    href={`/themes/${t.id}/edit`}
+                    className="flex-1 rounded-[7px] border border-[var(--color-border)] bg-white py-1.5 text-center text-xs font-semibold text-[var(--color-primary)]"
+                  >
+                    Edit
+                  </Link>
+                  <form action={duplicateThemeAction.bind(null, t.id)} className="flex-1">
+                    <button
+                      type="submit"
+                      className="w-full rounded-[7px] border border-[var(--color-border)] bg-white py-1.5 text-xs font-semibold text-[var(--color-text-muted)]"
+                    >
+                      Duplicate
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
