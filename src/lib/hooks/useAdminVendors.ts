@@ -33,9 +33,9 @@ export interface Vendor {
   updatedAt: string;
 }
 
-export async function fetchVendors(params: { page?: number; search?: string } = {}) {
-  const { page = 1, search } = params;
-  const query: Record<string, string | number> = { page, limit: 20 };
+export async function fetchVendors(params: { page?: number; search?: string; limit?: number } = {}) {
+  const { page = 1, search, limit = 20 } = params;
+  const query: Record<string, string | number> = { page, limit };
   if (search) query.search = search;
 
   const { items, meta } = await api.getList<Vendor>("/vendors", { params: query });

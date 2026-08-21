@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
 import { PillTabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
@@ -40,9 +42,10 @@ export default async function EventsPage({
 
   return (
     <div>
-      <div className="mb-4 text-[22px] font-extrabold text-[var(--color-text)]">
-        Event Management
-      </div>
+      <PageHeader
+        title="Event Management"
+        actions={<Button href="/events/create" variant="primary">+ Add Event</Button>}
+      />
       <PillTabs basePath="/events" options={FILTERS.map((f) => f.label)} current={active.label} />
 
       {loadError ? (

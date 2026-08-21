@@ -3,11 +3,21 @@ import { BackLink, Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Tabs } from "@/components/ui/Tabs";
+import { SelectOptionsField, TextField, CheckboxField } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Table";
 import { fetchEventDetail } from "@/lib/hooks/useAdminEvents";
 import { fetchVendorNameMap, fetchCustomerNameMap } from "@/lib/hooks/useNameMaps";
+import { fetchThemes } from "@/lib/hooks/useAdminThemes";
+import { fetchYoutubeChannels } from "@/lib/hooks/useAdminYoutube";
 import { fetchRecordings, formatBytes } from "@/lib/hooks/useAdminRecordings";
-import { publishEventAction, unpublishEventAction, cancelEventAction } from "@/lib/events";
+import {
+  publishEventAction,
+  unpublishEventAction,
+  cancelEventAction,
+  setEventThemeConfigAction,
+  setEventAccessAction,
+} from "@/lib/events";
+import { linkYoutubeStreamAction } from "@/lib/youtube";
 
 const TABS = ["Overview", "Live Stream", "Recording", "Settings"];
 
@@ -17,6 +27,26 @@ function toParam(v: string | string[] | undefined): string {
 
 function statusLabel(status: string): string {
   return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <span className="text-[var(--color-text-muted)]">{label}: </span>
+      <span className="font-semibold text-[var(--color-text)]">{value ?? "–"}</span>
+    </div>
+  );
+}
+
+function Thumb({ src, label }: { src: string | null; label: string }) {
+  if (!src) return null;
+  return (
+    <div>
+      <div className="mb-1 text-[11px] text-[var(--color-text-muted)]">{label}</div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={label} className="h-20 w-20 rounded-lg border border-[var(--color-border)] object-cover" />
+    </div>
+  );
 }
 
 export default async function EventDetailPage({
@@ -32,10 +62,15 @@ export default async function EventDetailPage({
   const tab = TABS.includes(tabParam ?? "") ? (tabParam as string) : "Overview";
   const error = toParam(sp.error);
 
-  const [vendorNames, customerNames] = await Promise.all([
+  const [vendorNames, customerNames, themes, channels] = await Promise.all([
     fetchVendorNameMap().catch(() => new Map<string, string>()),
     fetchCustomerNameMap().catch(() => new Map<string, string>()),
+    fetchThemes().catch(() => []),
+    fetchYoutubeChannels().catch(() => []),
   ]);
+
+  const themeName = new Map(themes.map((t) => [t.id, t.name]));
+  const channelName = new Map(channels.map((c) => [c.id, c.channelName ?? c.channelId]));
 
   return (
     <div>
@@ -46,6 +81,7 @@ export default async function EventDetailPage({
           <StatusBadge status={statusLabel(event.status)} />
         </div>
         <div className="flex flex-wrap gap-2.5">
+          <Button href={`/events/${id}/edit`} variant="secondary">Edit Event</Button>
           {event.isPublished ? (
             <form action={unpublishEventAction.bind(null, id)}>
               <button type="submit" className="rounded-[9px] border border-[var(--color-border)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--color-text)]">
@@ -78,96 +114,205 @@ export default async function EventDetailPage({
       <Tabs basePath={`/events/${id}`} options={TABS} current={tab} />
 
       {tab === "Overview" && (
-        <Card>
-          <CardTitle>Event Information</CardTitle>
-          <div className="grid grid-cols-1 gap-3.5 text-[13px] sm:grid-cols-2">
-            <div>
-              <span className="text-[var(--color-text-muted)]">Vendor: </span>
-              <span className="font-semibold text-[var(--color-text)]">{vendorNames.get(event.vendorId) ?? "–"}</span>
+        <div className="flex flex-col gap-3.5">
+          <Card>
+            <CardTitle>Event Information</CardTitle>
+            <div className="grid grid-cols-1 gap-3.5 text-[13px] sm:grid-cols-2">
+              <InfoRow label="Vendor" value={vendorNames.get(event.vendorId)} />
+              <InfoRow label="Customer" value={event.customerId ? customerNames.get(event.customerId) : null} />
+              <InfoRow label="Event Type" value={event.eventType} />
+              <InfoRow label="Location" value={event.location} />
+              <InfoRow
+                label="Google Maps"
+                value={
+                  event.googleMapsUrl ? (
+                    <a href={event.googleMapsUrl} target="_blank" rel="noreferrer">
+                      Open map
+                    </a>
+                  ) : null
+                }
+              />
+              <InfoRow
+                label="Date"
+                value={
+                  event.eventDate
+                    ? new Date(event.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                    : null
+                }
+              />
+              <InfoRow label="Live Timings" value={event.liveTiming} />
+              <InfoRow label="Event Code" value={event.eventCode} />
+              <InfoRow label="Public Page" value={`/${event.eventSlug}`} />
+              <InfoRow label="Published" value={event.isPublished ? "Yes" : "No"} />
+              <InfoRow label="Theme" value={event.themeId ? themeName.get(event.themeId) ?? event.themeId : null} />
+              <InfoRow label="Font" value={event.fontFamily} />
+              <InfoRow label="Watch Live Button" value={event.showWatchLive ? "Shown" : "Hidden"} />
+              <InfoRow label="Social Share Button" value={event.showSocialShare ? "Shown" : "Hidden"} />
+              <InfoRow
+                label="WhatsApp Support"
+                value={event.whatsappEnabled ? event.whatsappNumber ?? "Enabled" : "Disabled"}
+              />
+              <InfoRow
+                label="Teaser"
+                value={
+                  event.teaserUrl ? (
+                    <a href={event.teaserUrl} target="_blank" rel="noreferrer">
+                      Open teaser
+                    </a>
+                  ) : null
+                }
+              />
+              <InfoRow label="Scroll Message" value={event.scrollMessage} />
             </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Customer: </span>
-              <span className="font-semibold text-[var(--color-text)]">
-                {event.customerId ? customerNames.get(event.customerId) ?? "–" : "–"}
-              </span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Event Type: </span>
-              <span className="font-semibold text-[var(--color-text)]">{event.eventType ?? "–"}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Location: </span>
-              <span className="font-semibold text-[var(--color-text)]">{event.location ?? "–"}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Date: </span>
-              <span className="font-semibold text-[var(--color-text)]">
-                {event.eventDate ? new Date(event.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "–"}
-              </span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Event Code: </span>
-              <span className="font-semibold text-[var(--color-text)]">{event.eventCode}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Public Page: </span>
-              <span className="font-semibold text-[var(--color-text)]">/{event.eventSlug}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Published: </span>
-              <span className="font-semibold text-[var(--color-text)]">{event.isPublished ? "Yes" : "No"}</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+
+          {(event.remarks1 || event.remarks2) && (
+            <Card>
+              <CardTitle>Remarks</CardTitle>
+              <div className="grid grid-cols-1 gap-3.5 text-[13px] sm:grid-cols-2">
+                <InfoRow label="Remarks 1" value={event.remarks1} />
+                <InfoRow label="Remarks 2" value={event.remarks2} />
+              </div>
+            </Card>
+          )}
+
+          {(event.metaTitle || event.metaDescription) && (
+            <Card>
+              <CardTitle>SEO</CardTitle>
+              <div className="grid grid-cols-1 gap-3.5 text-[13px] sm:grid-cols-2">
+                <InfoRow label="Meta Title" value={event.metaTitle} />
+                <InfoRow label="Meta Description" value={event.metaDescription} />
+              </div>
+            </Card>
+          )}
+
+          {(event.coverImage || event.logoImage || event.customImage || event.whatsappImage || event.galleryImages.length > 0) && (
+            <Card>
+              <CardTitle>Media</CardTitle>
+              <div className="flex flex-wrap gap-4">
+                <Thumb src={event.coverImage} label="Cover" />
+                <Thumb src={event.logoImage} label="Logo" />
+                <Thumb src={event.customImage} label="Custom" />
+                <Thumb src={event.whatsappImage} label="WhatsApp" />
+                {event.galleryImages.map((src, i) => (
+                  <Thumb key={i} src={src} label={`Gallery ${i + 1}`} />
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
       )}
 
       {tab === "Live Stream" && (
-        event.youtubeStreams.length === 0 ? (
-          <EmptyState message="No YouTube stream linked to this event yet." />
-        ) : (
-          <div className="flex flex-col gap-3.5">
-            {event.youtubeStreams.map((s) => (
+        <div className="flex flex-col gap-3.5">
+          {event.youtubeStreams.length === 0 ? (
+            <Card>
+              <CardTitle>Link a YouTube Stream</CardTitle>
+              {channels.length === 0 ? (
+                <EmptyState message="No connected YouTube channels yet — connect one from the YouTube section first." />
+              ) : (
+                <form action={linkYoutubeStreamAction.bind(null, id)} className="flex flex-col gap-3.5">
+                  <SelectOptionsField
+                    label="YouTube Channel"
+                    name="youtubeChannelId"
+                    placeholder="Select a channel…"
+                    required
+                    options={channels.map((c) => ({ value: c.id, label: c.channelName ?? c.channelId }))}
+                  />
+                  <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+                    <TextField label="Live Video ID" name="youtubeVideoId" placeholder="e.g. _eZppUQh9kU" />
+                    <TextField label="Live URL" name="youtubeLiveUrl" placeholder="https://youtube.com/live/…" />
+                    <TextField label="Live Key" name="youtubeLiveKey" placeholder="e.g. rt56-t6dt-1kga-kc8a-bkf7" />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-fit rounded-[9px] bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-bold text-white"
+                  >
+                    Link Stream
+                  </button>
+                </form>
+              )}
+            </Card>
+          ) : (
+            event.youtubeStreams.map((s) => (
               <Card key={s.id}>
                 <div className="mb-2.5 flex items-center justify-between">
-                  <div className="text-[14px] font-bold text-[var(--color-text)]">Channel {s.youtubeChannelId}</div>
+                  <div className="text-[14px] font-bold text-[var(--color-text)]">
+                    {channelName.get(s.youtubeChannelId) ?? `Channel ${s.youtubeChannelId}`}
+                  </div>
                   <StatusBadge status={statusLabel(s.status)} />
                 </div>
                 <div className="grid grid-cols-1 gap-2 text-[13px] sm:grid-cols-2">
-                  <div>
-                    <span className="text-[var(--color-text-muted)]">Video ID: </span>
-                    <span className="font-mono font-semibold text-[var(--color-text)]">{s.youtubeVideoId ?? "–"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[var(--color-text-muted)]">Live URL: </span>
-                    <span className="font-semibold text-[var(--color-text)]">{s.youtubeLiveUrl ?? "–"}</span>
-                  </div>
+                  <InfoRow label="Video ID" value={s.youtubeVideoId} />
+                  <InfoRow label="Live URL" value={s.youtubeLiveUrl} />
                 </div>
               </Card>
-            ))}
-          </div>
-        )
+            ))
+          )}
+        </div>
       )}
 
       {tab === "Recording" && <RecordingTab eventId={id} />}
 
       {tab === "Settings" && (
-        <Card>
-          <CardTitle>Access</CardTitle>
-          <div className="grid grid-cols-1 gap-3.5 text-[13px] sm:grid-cols-2">
-            <div>
-              <span className="text-[var(--color-text-muted)]">Access Type: </span>
-              <span className="font-semibold text-[var(--color-text)]">{event.access?.accessType ?? "PUBLIC"}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Enabled: </span>
-              <span className="font-semibold text-[var(--color-text)]">{event.access?.isEnabled ?? true ? "Yes" : "No"}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Theme: </span>
-              <span className="font-semibold text-[var(--color-text)]">{event.themeId ?? "None assigned"}</span>
-            </div>
-          </div>
-        </Card>
+        <div className="flex flex-col gap-3.5">
+          <Card>
+            <CardTitle>Theme</CardTitle>
+            <form action={setEventThemeConfigAction.bind(null, id)} className="flex flex-col gap-3.5">
+              <div>
+                <label htmlFor="themeId" className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
+                  Design
+                </label>
+                <select
+                  id="themeId"
+                  name="themeId"
+                  defaultValue={event.themeId ?? ""}
+                  className="w-full max-w-[360px] rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+                >
+                  <option value="">Select a theme…</option>
+                  {themes
+                    .filter((t) => t.status === "ACTIVE" || t.id === event.themeId)
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="w-fit rounded-[9px] border border-[var(--color-border)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--color-text)]"
+              >
+                Save Theme
+              </button>
+            </form>
+          </Card>
+
+          <Card>
+            <CardTitle>Access</CardTitle>
+            <form action={setEventAccessAction.bind(null, id)} className="flex flex-col gap-3.5">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <SelectOptionsField
+                  label="Access Type"
+                  name="accessType"
+                  defaultValue={event.access?.accessType ?? "PUBLIC"}
+                  options={[
+                    { value: "PUBLIC", label: "Public" },
+                    { value: "PRIVATE", label: "Private (password protected)" },
+                  ]}
+                />
+                <TextField label="Password (only if Private)" name="password" type="password" placeholder="Leave blank to keep current" />
+              </div>
+              <CheckboxField label="Enabled" name="isEnabled" defaultChecked={event.access?.isEnabled ?? true} />
+              <button
+                type="submit"
+                className="w-fit rounded-[9px] border border-[var(--color-border)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--color-text)]"
+              >
+                Save Access
+              </button>
+            </form>
+          </Card>
+        </div>
       )}
     </div>
   );
@@ -181,24 +326,13 @@ async function RecordingTab({ eventId }: { eventId: string }) {
       {items.map((rc) => (
         <Card key={rc.id}>
           <div className="grid grid-cols-1 gap-2 text-[13px] sm:grid-cols-2">
-            <div>
-              <span className="text-[var(--color-text-muted)]">Status: </span>
-              <span className="font-semibold text-[var(--color-text)]">{rc.status}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Size: </span>
-              <span className="font-semibold text-[var(--color-text)]">{formatBytes(rc.sizeBytes)}</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Duration: </span>
-              <span className="font-semibold text-[var(--color-text)]">{Math.round(rc.durationSec / 60)} min</span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">Recorded: </span>
-              <span className="font-semibold text-[var(--color-text)]">
-                {new Date(rc.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-              </span>
-            </div>
+            <InfoRow label="Status" value={rc.status} />
+            <InfoRow label="Size" value={formatBytes(rc.sizeBytes)} />
+            <InfoRow label="Duration" value={`${Math.round(rc.durationSec / 60)} min`} />
+            <InfoRow
+              label="Recorded"
+              value={new Date(rc.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            />
           </div>
           {rc.fileUrl ? (
             <div className="mt-3">
