@@ -1,0 +1,77 @@
+/**
+ * Event type values are preserved verbatim from the legacy ASP.NET admin portal's dropdown
+ * (`eventType` is stored as free text on the backend) so existing/historical events keep matching
+ * labels. Only the display labels are cleaned up for readability.
+ */
+export const EVENT_TYPES: { value: string; label: string }[] = [
+  { value: "Marriage", label: "Marriage" },
+  { value: "Marriage-Events", label: "Marriage Events" },
+  { value: "babyshower", label: "Baby Shower" },
+  { value: "birthday", label: "Birthday" },
+  { value: "cradleceremony", label: "Cradle Ceremony" },
+  { value: "church", label: "Church" },
+  { value: "dhoticeremony", label: "Dhoti Ceremony" },
+  { value: "devotional", label: "Devotional" },
+  { value: "kuchipudirangapravesam", label: "Kuchipudi Ranga Pravesam" },
+  { value: "generalevents", label: "General Events" },
+  { value: "gruhapravesham", label: "Gruhapravesham" },
+  { value: "halfsareeinvitation", label: "Half Saree Invitation" },
+  { value: "muslimswedding", label: "Muslim Wedding" },
+  { value: "namakaranaveduka", label: "Namakarana Veduka" },
+  { value: "padipooja", label: "Padi Pooja" },
+  { value: "panchebahukarana", label: "Panchebahukarana" },
+  { value: "retirment", label: "Retirement" },
+  { value: "reunion", label: "Reunion" },
+  { value: "seemantham", label: "Seemantham" },
+  { value: "shastipoorthiveduka", label: "Shastipoorthi Veduka" },
+  { value: "upanayanam", label: "Upanayanam" },
+  { value: "vonifunction", label: "Voni Function" },
+  { value: "plain", label: "Plain / Other" },
+];
+
+/**
+ * A curated subset of the legacy font picker's ~250 Google Fonts — kept broad enough to cover
+ * the common styles (script, serif, sans, display) without reproducing the entire obscure list.
+ */
+export const FONT_OPTIONS: string[] = [
+  "Arial",
+  "Georgia",
+  "Lato",
+  "Open Sans",
+  "Roboto",
+  "Merriweather",
+  "Playfair Display",
+  "Lora",
+  "PT Serif",
+  "Crimson Text",
+  "EB Garamond",
+  "Cardo",
+  "Vollkorn",
+  "Old Standard TT",
+  "Josefin Sans",
+  "Raleway",
+  "Oswald",
+  "Cabin",
+  "Arimo",
+  "Didact Gothic",
+  "Dancing Script",
+  "Pacifico",
+  "Great Vibes",
+  "Tangerine",
+  "Sacramento",
+  "Homemade Apple",
+  "Indie Flower",
+  "Shadows Into Light",
+  "Cookie",
+  "Satisfy",
+  "Bangers",
+  "Lobster",
+  "Anton",
+  "Ultra",
+  "Luckiest Guy",
+  "Permanent Marker",
+  "Special Elite",
+  "VT323",
+  "Orbitron",
+  "Cinzel",
+];

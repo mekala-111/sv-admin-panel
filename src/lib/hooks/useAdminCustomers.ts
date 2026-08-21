@@ -25,9 +25,10 @@ export async function fetchCustomers(params: {
   page?: number;
   search?: string;
   status?: CustomerStatus | "";
+  limit?: number;
 } = {}) {
-  const { page = 1, search, status } = params;
-  const query: Record<string, string | number> = { page, limit: 20 };
+  const { page = 1, search, status, limit = 20 } = params;
+  const query: Record<string, string | number> = { page, limit };
   if (search) query.search = search;
   if (status) query.status = status;
 
