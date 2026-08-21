@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { SlotImage } from "../ui/SlotImage";
 import {
@@ -9,15 +7,9 @@ import {
   SearchIcon,
   SupportIcon,
 } from "../ui/Icons";
-import { logoutAction } from "@/lib/auth";
+import { logout, type AdminUser } from "@/lib/auth";
 
-export function Topbar({
-  userName,
-  userRole,
-}: {
-  userName?: string | null;
-  userRole?: string | null;
-}) {
+export function Topbar({ user }: { user: AdminUser | null }) {
   return (
     <div className="flex h-[60px] shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)] px-4 md:h-[72px] md:gap-5 md:px-7">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -37,7 +29,7 @@ export function Topbar({
         <Link href="/notifications" className="relative text-[var(--color-text-muted)]">
           <NotificationsIcon size={21} />
         </Link>
-        <Link href="/support" aria-label="Support">
+        <Link href="/support">
           <SupportIcon size={21} color="#707070" />
         </Link>
         <div className="hidden h-[26px] w-px bg-[var(--color-border)] sm:block" />
@@ -50,20 +42,20 @@ export function Topbar({
           />
           <div className="hidden text-left md:block">
             <div className="text-[13px] font-bold text-[var(--color-text)]">
-              {userName || "Admin"}
+              {user?.name ?? "Admin"}
             </div>
             <div className="text-[11px] text-[var(--color-text-muted)]">
-              {userRole || "ADMIN"}
+              {user?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
             </div>
           </div>
           <ChevronDownIcon size={14} className="hidden sm:block" />
         </Link>
-        <form action={logoutAction}>
+        <form action={logout}>
           <button
             type="submit"
-            className="rounded-[8px] border border-[var(--color-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
+            className="rounded-[7px] border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)]"
           >
-            Logout
+            Sign out
           </button>
         </form>
       </div>

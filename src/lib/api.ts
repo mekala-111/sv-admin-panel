@@ -1,165 +1,173 @@
+/**
+ * HTTP client for backend API calls with JWT token handling.
+ * Server-only: reads the access token from the httpOnly cookie (via next/headers) and
+ * attaches it as `Authorization: Bearer <token>`, since the backend only ever reads that
+ * header — it does not authenticate via cookies.
+ */
+
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { cookieSecureFlag } from "@/lib/session-cookies";
+import { ACCESS_TOKEN_COOKIE } from "./cookies";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:4000/api";
-const ADMIN_BASE = process.env.NEXT_PUBLIC_ADMIN_BASE_URL || process.env.ADMIN_BASE_URL || "";
-
-export const AUTH_COOKIE = "sv_admin_access";
-export const REFRESH_COOKIE = "sv_admin_refresh";
-export const USER_COOKIE = "sv_admin_user";
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data: T;
-  meta?: Record<string, unknown>;
-  error?: { code: string; message: string };
-};
-
-export type AdminSessionUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-};
-
-export async function getAccessToken(): Promise<string | null> {
-  const store = await cookies();
-  return store.get(AUTH_COOKIE)?.value ?? null;
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public data?: unknown
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
-function sessionCookieOpts(maxAge = 60 * 60 * 24 * 30) {
+interface FetchOptions extends RequestInit {
+  params?: Record<string, string | number | boolean>;
+}
+
+const getApiUrl = () => {
+  // Use public URL if available, fallback to private
+  const base = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:4000/api";
+  // Must end with a trailing slash: `new URL(path, base)` drops the base's own
+  // path segment (e.g. "/api") whenever `path` starts with "/", unless base ends in "/".
+  return base.endsWith("/") ? base : `${base}/`;
+};
+
+/** Envelope shape every sv-live-backend response is wrapped in: { success, data, meta } or { success: false, error }. */
+interface ApiEnvelope {
+  success: boolean;
+  data?: unknown;
+  meta?: Record<string, unknown>;
+  error?: { code: string; message: string };
+}
+
+function isEnvelope(data: unknown): data is ApiEnvelope {
+  return !!data && typeof data === "object" && "success" in data;
+}
+
+/**
+ * Fetch wrapper that handles JWT tokens via httpOnly cookies.
+ * Unwraps the backend's { success, data, meta } envelope and throws ApiError on failure.
+ */
+async function rawApiCall(
+  path: string,
+  options: FetchOptions = {}
+): Promise<{ data: unknown; meta?: Record<string, unknown> }> {
+  // A leading "/" makes the URL constructor treat `path` as absolute (replacing the
+  // base's own path, e.g. "/api"), so it must be stripped for the base to apply.
+  const url = new URL(path.replace(/^\/+/, ""), getApiUrl());
+
+  // Append query params if provided
+  if (options.params) {
+    Object.entries(options.params).forEach(([key, value]) => {
+      url.searchParams.append(key, String(value));
+    });
+  }
+
+  const store = await cookies();
+  const accessToken = store.get(ACCESS_TOKEN_COOKIE)?.value;
+
+  const response = await fetch(url.toString(), {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...options.headers,
+    },
+  });
+
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType?.includes("application/json");
+
+  let data: unknown;
+  if (isJson) {
+    data = await response.json();
+  } else {
+    data = await response.text();
+  }
+
+  if (!response.ok || (isEnvelope(data) && data.success === false)) {
+    const message = isEnvelope(data)
+      ? data.error?.message ?? `API Error: ${response.statusText}`
+      : `API Error: ${response.statusText}`;
+    throw new ApiError(message, response.status, data);
+  }
+
+  if (isEnvelope(data)) {
+    return { data: data.data, meta: data.meta };
+  }
+  return { data };
+}
+
+export async function apiCall<T = unknown>(
+  path: string,
+  options: FetchOptions = {}
+): Promise<T> {
+  const { data } = await rawApiCall(path, options);
+  return data as T;
+}
+
+/** Like apiCall, but also returns the backend's pagination meta (page/limit/total/totalPages) for list endpoints. */
+export async function apiCallList<T = unknown>(
+  path: string,
+  options: FetchOptions = {}
+): Promise<{ items: T[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+  const { data, meta } = await rawApiCall(path, options);
   return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    path: "/",
-    secure: cookieSecureFlag(ADMIN_BASE),
-    maxAge,
+    items: (data as T[]) ?? [],
+    meta: {
+      page: Number(meta?.page ?? 1),
+      limit: Number(meta?.limit ?? 20),
+      total: Number(meta?.total ?? 0),
+      totalPages: Number(meta?.totalPages ?? 1),
+    },
   };
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const store = await cookies();
-  const refreshToken = store.get(REFRESH_COOKIE)?.value;
-  if (!refreshToken) return null;
+// Type-safe API methods
+export const api = {
+  get: <T = unknown>(path: string, options?: FetchOptions) =>
+    apiCall<T>(path, { ...options, method: "GET" }),
 
-  const res = await fetch(`${API_URL}/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-    cache: "no-store",
-  });
-  const json = (await res.json().catch(() => ({}))) as ApiEnvelope<{
-    accessToken: string;
-    refreshToken?: string;
-  }>;
-  if (!res.ok || json.success === false || !json.data?.accessToken) {
-    try {
-      store.delete(AUTH_COOKIE);
-      store.delete(REFRESH_COOKIE);
-      store.delete(USER_COOKIE);
-    } catch {
-      /* RSC may not allow cookie mutation */
-    }
-    return null;
-  }
+  getList: <T = unknown>(path: string, options?: FetchOptions) =>
+    apiCallList<T>(path, { ...options, method: "GET" }),
 
-  try {
-    const opts = sessionCookieOpts();
-    store.set(AUTH_COOKIE, json.data.accessToken, opts);
-    if (json.data.refreshToken) {
-      store.set(REFRESH_COOKIE, json.data.refreshToken, opts);
-    }
-  } catch {
-    /* proxy/middleware will persist on next navigation */
-  }
-  return json.data.accessToken;
+  post: <T = unknown>(path: string, body?: unknown, options?: FetchOptions) =>
+    apiCall<T>(path, {
+      ...options,
+      method: "POST",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  patch: <T = unknown>(path: string, body?: unknown, options?: FetchOptions) =>
+    apiCall<T>(path, {
+      ...options,
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  put: <T = unknown>(path: string, body?: unknown, options?: FetchOptions) =>
+    apiCall<T>(path, {
+      ...options,
+      method: "PUT",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  delete: <T = unknown>(path: string, options?: FetchOptions) =>
+    apiCall<T>(path, { ...options, method: "DELETE" }),
+};
+
+// Type-safe response types from backend
+export interface AuthResponse {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: "SUPER_ADMIN" | "ADMIN" | "VENDOR" | "CUSTOMER";
+  };
+  accessToken: string;
+  refreshToken: string;
 }
 
-export async function apiFetch<T>(
-  path: string,
-  options: RequestInit & {
-    auth?: boolean;
-    _retried?: boolean;
-    /** Used after refresh when cookies() cannot be mutated in RSC. */
-    accessTokenOverride?: string;
-  } = {}
-): Promise<{ data: T; meta?: Record<string, unknown> }> {
-  const { auth = true, headers, _retried, accessTokenOverride, ...rest } = options;
-  const h = new Headers(headers);
-  h.set("Content-Type", "application/json");
-
-  if (auth) {
-    const token = accessTokenOverride ?? (await getAccessToken());
-    if (token) h.set("Authorization", `Bearer ${token}`);
-  }
-
-  const res = await fetch(`${API_URL}${path.startsWith("/") ? path : `/${path}`}`, {
-    ...rest,
-    headers: h,
-    cache: "no-store",
-  });
-
-  if (auth && res.status === 401 && !_retried) {
-    const nextToken = await refreshAccessToken();
-    if (nextToken) {
-      return apiFetch<T>(path, { ...options, _retried: true, accessTokenOverride: nextToken });
-    }
-    redirect("/login?error=session");
-  }
-
-  const json = (await res.json().catch(() => ({}))) as ApiEnvelope<T>;
-  if (!res.ok || json.success === false) {
-    throw new Error(json.error?.message || `API ${res.status}: ${path}`);
-  }
-  return { data: json.data, meta: json.meta };
-}
-
-export async function apiLogin(email: string, password: string) {
-  return apiFetch<{
-    user: { id: string; name: string; email: string; role: string };
-    accessToken: string;
-    refreshToken: string;
-  }>("/auth/login", {
-    method: "POST",
-    auth: false,
-    body: JSON.stringify({ email, password }),
-  });
-}
-
-export function formatINR(amount: number | string | null | undefined) {
-  const n = typeof amount === "string" ? Number(amount) : amount ?? 0;
-  if (Number.isNaN(n)) return "₹0";
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-export function mapVendorStatus(s?: string): "Active" | "Pending" | "Suspended" {
-  if (s === "ACTIVE") return "Active";
-  if (s === "SUSPENDED") return "Suspended";
-  return "Pending";
-}
-
-export function mapEventStatus(s?: string): "Live" | "Completed" | "Upcoming" | "Cancelled" {
-  if (s === "LIVE") return "Live";
-  if (s === "COMPLETED") return "Completed";
-  if (s === "CANCELLED" || s === "EXPIRED") return "Cancelled";
-  return "Upcoming";
-}
-
-export function mapPaymentStatus(s?: string): "Successful" | "Pending" | "Failed" | "Refunded" {
-  if (s === "SUCCESS") return "Successful";
-  if (s === "FAILED") return "Failed";
-  if (s === "REFUNDED") return "Refunded";
-  return "Pending";
-}
-
-export function fmtDate(d?: string | Date | null) {
-  if (!d) return "—";
-  const date = typeof d === "string" ? new Date(d) : d;
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+export interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
 }

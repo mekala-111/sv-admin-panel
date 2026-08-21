@@ -1,26 +1,31 @@
 import { BackLink } from "@/components/ui/Button";
+import { Card, CardTitle } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { listThemeAssignments, listThemes, listVendors } from "@/lib/db";
-import { saveVendorThemeAssignmentsAction } from "@/lib/theme-actions";
-import { VendorThemeAssignments } from "./VendorThemeAssignments";
+import { TableCard, Thead, Tr, Td, EmptyState } from "@/components/ui/Table";
+import { fetchThemes, fetchVendorAssignedThemes } from "@/lib/hooks/useAdminThemes";
+import { fetchVendors } from "@/lib/hooks/useAdminVendors";
+import { assignThemeToVendorAction } from "@/lib/themes";
 
-export default async function ThemeAssignmentsPage(props: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
-}) {
-  const searchParams = await props.searchParams;
-  const [vendors, themes, assignments] = await Promise.all([
-    listVendors(),
-    listThemes(),
-    listThemeAssignments(),
+function toParam(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
+
+export default async function ThemeAssignmentsPage(props: PageProps<"/themes/assignments">) {
+  const sp = await props.searchParams;
+  const error = toParam(sp.error);
+  const vendorId = toParam(sp.vendorId);
+
+  const [vendorsResult, themes] = await Promise.all([
+    fetchVendors({ page: 1 }).catch(() => ({ items: [], page: 1, totalPages: 1, total: 0 })),
+    fetchThemes().catch(() => []),
   ]);
+  const vendors = vendorsResult.items;
+  const selectedVendorId = vendorId || vendors[0]?.id || "";
 
-  const assignedByVendor = new Map<string, Set<string>>();
-  for (const row of assignments) {
-    if (!row.isEnabled) continue;
-    const set = assignedByVendor.get(row.vendorId) ?? new Set<string>();
-    set.add(row.themeId);
-    assignedByVendor.set(row.vendorId, set);
-  }
+  const assigned = selectedVendorId
+    ? await fetchVendorAssignedThemes(selectedVendorId).catch(() => [])
+    : [];
+  const assignedThemeIds = new Set(assigned.map((a) => a.themeId));
 
   return (
     <div>
@@ -28,57 +33,93 @@ export default async function ThemeAssignmentsPage(props: {
       <div className="mb-2 text-[22px] font-extrabold text-[var(--color-text)]">
         Theme Assignments
       </div>
-      <p className="mb-5 max-w-2xl text-[13.5px] leading-relaxed text-[var(--color-muted-strong)]">
-        Assign themes to vendors. Vendors only see assigned themes when creating events.
-      </p>
 
-      {searchParams.saved ? (
-        <div className="mb-4 text-[13px] font-bold text-[#1E9E5A]">Assignments saved.</div>
-      ) : null}
-      {searchParams.error ? (
-        <div className="mb-4 text-[13px] font-bold text-[#E4362B]">
-          Could not save assignments. Please try again.
-        </div>
+      <Card className="mb-5">
+        <CardTitle>Choose a Vendor</CardTitle>
+        <form method="get" className="flex flex-wrap items-end gap-2.5">
+          <div className="min-w-[240px] flex-1">
+            <select
+              name="vendorId"
+              defaultValue={selectedVendorId}
+              className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+            >
+              {vendors.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.companyName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="rounded-[9px] border border-[var(--color-border)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--color-text)]">
+            View Assignments
+          </button>
+        </form>
+      </Card>
+
+      {error ? (
+        <p className="mb-4 text-xs font-semibold text-[var(--color-danger)]" role="alert">
+          {error}
+        </p>
       ) : null}
 
-      {vendors.length === 0 ? (
-        <p className="text-[13.5px] text-[var(--color-muted)]">No vendors yet. Create a vendor first.</p>
-      ) : themes.length === 0 ? (
-        <p className="text-[13.5px] text-[var(--color-muted)]">No themes yet. Create a theme first.</p>
+      {!selectedVendorId ? (
+        <EmptyState message="No vendors yet." />
       ) : (
-        <div className="space-y-4">
-          {vendors.map((vendor) => {
-            const vendorId = String(vendor.id);
-            const assigned = assignedByVendor.get(vendorId) ?? new Set<string>();
-            return (
-              <div
-                key={vendorId}
-                className="rounded-[12px] border border-[var(--color-border)] bg-white p-4 shadow-sm"
-              >
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="text-[15px] font-extrabold text-[var(--color-text)]">
-                      {vendor.name}
+        <>
+          {assigned.length === 0 ? (
+            <EmptyState message="This vendor has no themes assigned yet." />
+          ) : (
+            <TableCard>
+              <Thead columns={["THEME", "ENABLED", "DEFAULT"]} />
+              <tbody>
+                {assigned.map((a) => (
+                  <Tr key={a.id}>
+                    <Td strong>{a.theme.name}</Td>
+                    <Td>
+                      <StatusBadge status={a.isEnabled ? "Active" : "Disabled"} />
+                    </Td>
+                    <Td muted>{a.isDefault ? "Yes" : "No"}</Td>
+                  </Tr>
+                ))}
+              </tbody>
+            </TableCard>
+          )}
+
+          <Card className="mt-5">
+            <CardTitle>Assign a Theme</CardTitle>
+            {themes.length === 0 ? (
+              <div className="text-[13px] text-[var(--color-text-muted)]">No themes available yet.</div>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {themes.map((t) => (
+                  <form
+                    key={t.id}
+                    action={assignThemeToVendorAction.bind(null, t.id)}
+                    className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[var(--color-border)] p-3"
+                  >
+                    <input type="hidden" name="vendorId" value={selectedVendorId} />
+                    <div className="text-[13px] font-semibold text-[var(--color-text)]">
+                      {t.name} {assignedThemeIds.has(t.id) ? "(already assigned)" : ""}
                     </div>
-                    <div className="text-[12px] text-[var(--color-muted)]">{vendor.email}</div>
-                  </div>
-                  <StatusBadge status={vendor.status} />
-                </div>
-                <VendorThemeAssignments
-                  vendorId={vendorId}
-                  themes={themes.map((t) => ({
-                    id: t._id ?? String(t.id),
-                    name: t.name,
-                    category: t.category,
-                    status: t.status,
-                  }))}
-                  assignedThemeIds={[...assigned]}
-                  saveAction={saveVendorThemeAssignmentsAction}
-                />
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                        <input type="checkbox" name="isEnabled" defaultChecked />
+                        Enabled
+                      </label>
+                      <label className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                        <input type="checkbox" name="isDefault" />
+                        Default
+                      </label>
+                      <button type="submit" className="rounded-[7px] border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)]">
+                        Assign
+                      </button>
+                    </div>
+                  </form>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            )}
+          </Card>
+        </>
       )}
     </div>
   );

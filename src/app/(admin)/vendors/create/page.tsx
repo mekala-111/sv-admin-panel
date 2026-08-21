@@ -1,10 +1,19 @@
 import { BackLink } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { FieldDisplay, SelectField, TextField } from "@/components/ui/Field";
-import { SlotImage } from "@/components/ui/SlotImage";
-import { createVendorAction } from "@/lib/actions";
+import { TextField } from "@/components/ui/Field";
+import { createVendorAction } from "@/lib/vendors";
+import { fetchPlans } from "@/lib/hooks/useAdminPlans";
 
-export default function CreateVendorPage() {
+function toParam(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
+
+export default async function CreateVendorPage(props: PageProps<"/vendors/create">) {
+  const params = await props.searchParams;
+  const error = toParam(params.error);
+
+  const plans = await fetchPlans().catch(() => []);
+
   return (
     <div className="max-w-[760px]">
       <BackLink href="/vendors" label="Back to Vendors" />
@@ -14,89 +23,46 @@ export default function CreateVendorPage() {
 
       <form action={createVendorAction} className="flex flex-col gap-4">
         <Card>
-          <CardTitle>Basic Information</CardTitle>
+          <CardTitle>Login &amp; Contact</CardTitle>
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <TextField
-              label="Vendor Name"
-              name="name"
-              placeholder="e.g. SV Events"
-              required
-            />
-            <TextField
-              label="Company Name"
-              name="company"
-              placeholder="e.g. SV Events Pvt Ltd"
-              required
-            />
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="vendor@email.com"
-              required
-            />
-            <TextField
-              label="Phone"
-              name="phone"
-              placeholder="+91 00000 00000"
-            />
-            <TextField
-              label="Password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-            />
+            <TextField label="Contact Name" name="name" placeholder="e.g. Rahul Sharma" required />
+            <TextField label="Company Name" name="company" placeholder="e.g. SV Events Pvt Ltd" required />
+            <TextField label="Email" name="email" type="email" placeholder="vendor@email.com" required />
+            <TextField label="Password" name="password" type="password" placeholder="At least 8 characters" required />
+            <TextField label="Phone" name="phone" placeholder="+91 00000 00000" />
+            <TextField label="WhatsApp Number" name="whatsappNumber" placeholder="+91 00000 00000" />
           </div>
         </Card>
 
         <Card>
           <CardTitle>Business</CardTitle>
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <TextField
-              label="GST Number"
-              name="gst"
-              placeholder="22AAAAA0000A1Z5"
-            />
-            <TextField
-              label="Address"
-              name="address"
-              placeholder="Street address"
-            />
-            <TextField label="City" name="city" placeholder="City" />
-            <TextField label="State" name="state" placeholder="State" />
-            <TextField label="Country" name="country" placeholder="India" />
+            <TextField label="Address" name="address" placeholder="Street address" />
+            <div>
+              <label htmlFor="planId" className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
+                Pricing Plan
+              </label>
+              <select
+                id="planId"
+                name="planId"
+                className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+              >
+                <option value="">No plan</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} — ₹{p.price}/{p.billingPeriod}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </Card>
 
         <Card>
-          <CardTitle>Event pricing &amp; wallet</CardTitle>
+          <CardTitle>Billing</CardTitle>
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <TextField
-              label="Live event creation fee (₹)"
-              name="liveEventCreationFee"
-              type="number"
-              placeholder="e.g. 999"
-              defaultValue="0"
-            />
-            <TextField
-              label="Invitation creation fee (₹)"
-              name="invitationCreationFee"
-              type="number"
-              placeholder="e.g. 499"
-              defaultValue="0"
-            />
-            <TextField
-              label="Initial wallet credit (₹)"
-              name="initialWalletCredit"
-              type="number"
-              placeholder="e.g. 1000"
-              defaultValue="0"
-            />
-            <SelectField
-              label="Pricing Plan"
-              name="plan"
-              options={["Starter", "Professional", "Enterprise"]}
-            />
+            <TextField label="Event Creation Fee (₹)" name="eventCreationFee" type="number" placeholder="0" />
+            <TextField label="Initial Wallet Credit (₹)" name="initialWalletCredit" type="number" placeholder="0" />
           </div>
           <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
             Vendor pays the live event fee when creating a live stream event, and the invitation
@@ -104,55 +70,11 @@ export default function CreateVendorPage() {
           </p>
         </Card>
 
-        <Card>
-          <CardTitle>Branding</CardTitle>
-          <div className="mb-3.5 flex gap-4">
-            <SlotImage
-              slotId="new-vendor-logo"
-              label="Logo"
-              shape="rounded"
-              radius={12}
-              className="h-[72px] w-[72px]"
-            />
-            <SlotImage
-              slotId="new-vendor-favicon"
-              label="Favicon"
-              shape="rounded"
-              radius={12}
-              className="h-[72px] w-[72px]"
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <FieldDisplay
-              label="Primary Color"
-              value={
-                <span className="flex items-center gap-2">
-                  <span className="h-[18px] w-[18px] rounded-[5px] bg-[#FF7A00]" />
-                  #FF7A00
-                </span>
-              }
-            />
-            <FieldDisplay
-              label="Secondary Color"
-              value={
-                <span className="flex items-center gap-2">
-                  <span className="h-[18px] w-[18px] rounded-[5px] bg-[#F52222]" />
-                  #F52222
-                </span>
-              }
-            />
-            <TextField
-              label="Subdomain"
-              name="subdomain"
-              placeholder="vendor.svlive.in"
-            />
-            <TextField
-              label="Custom Domain"
-              name="customDomain"
-              placeholder="optional"
-            />
-          </div>
-        </Card>
+        {error ? (
+          <p className="text-xs font-semibold text-[var(--color-danger)]" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <button
           type="submit"

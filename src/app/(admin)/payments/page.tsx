@@ -1,16 +1,25 @@
 import { Card, CardTitle } from "@/components/ui/Card";
 import { PillTabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { TableCard, Thead, Tr, Td, EmptyState } from "@/components/ui/Table";
-import {
-  getPaymentStats,
-  getPlatformRevenue,
-  listPendingEventCreationPayments,
-  listTransactions,
-} from "@/lib/db";
-import { approvePaymentAction, rejectPaymentAction } from "@/lib/payment-actions";
+import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
+import { fetchPayments, fetchPlatformRevenue, type PaymentStatus } from "@/lib/hooks/useAdminPayments";
+import { fetchVendorNameMap, fetchCustomerNameMap } from "@/lib/hooks/useNameMaps";
+import { approvePaymentAction, rejectPaymentAction } from "@/lib/payments";
 
-const FILTERS = ["Successful", "Pending", "Failed", "Refunded"];
+const FILTERS: { label: string; status: PaymentStatus }[] = [
+  { label: "Pending", status: "PENDING" },
+  { label: "Successful", status: "SUCCESS" },
+  { label: "Failed", status: "FAILED" },
+  { label: "Refunded", status: "REFUNDED" },
+];
+
+function toParam(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
+
+function statusLabel(status: string): string {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
 
 export default async function PaymentsPage({
   searchParams,
@@ -18,16 +27,20 @@ export default async function PaymentsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
-  const tab = FILTERS.includes(tabParam ?? "") ? (tabParam as string) : "Pending";
+  const tabParam = toParam(sp.tab);
+  const active = FILTERS.find((f) => f.label === tabParam) ?? FILTERS[0];
+  const error = toParam(sp.error);
 
-  const [allTx, stats, platform, pendingFees] = await Promise.all([
-    listTransactions(),
-    getPaymentStats(),
-    getPlatformRevenue(),
-    listPendingEventCreationPayments(),
+  const [allPayments, revenue, vendorNames, customerNames] = await Promise.all([
+    fetchPayments().catch(() => []),
+    fetchPlatformRevenue().catch(() => null),
+    fetchVendorNameMap().catch(() => new Map<string, string>()),
+    fetchCustomerNameMap().catch(() => new Map<string, string>()),
   ]);
-  const transactions = allTx.filter((t) => t.status === tab);
+
+  const transactions = allPayments.filter((t) => t.status === active.status);
+  const pendingTotal = allPayments.filter((p) => p.status === "PENDING").reduce((s, p) => s + p.amount, 0);
+  const refundedTotal = allPayments.filter((p) => p.status === "REFUNDED").reduce((s, p) => s + p.amount, 0);
 
   return (
     <div>
@@ -59,108 +72,87 @@ export default async function PaymentsPage({
         </Card>
       </div>
 
-      {pendingFees.length > 0 ? (
-        <Card className="mb-5">
-          <CardTitle>Event creation payments to review</CardTitle>
-          <div className="flex flex-col gap-4">
-            {pendingFees.map((fee) => (
-              <div
-                key={fee.id}
-                className="flex flex-col gap-3 rounded-[12px] border border-[var(--color-border)] p-4 sm:flex-row sm:items-start"
-              >
-                {fee.paymentImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={fee.paymentImage}
-                    alt="Payment proof"
-                    className="h-28 w-28 shrink-0 rounded-lg border border-[var(--color-border)] object-cover"
-                  />
-                ) : (
-                  <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] text-[11px] text-[var(--color-text-muted)]">
-                    No image
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-bold text-[var(--color-text)]">{fee.event}</div>
-                  <div className="mt-1 text-[12px] text-[var(--color-text-muted)]">
-                    Vendor: {fee.vendor} · {fee.date}
-                  </div>
-                  <div className="mt-2 text-[13px] font-semibold">{fee.amount}</div>
-                  <div className="mt-1 font-mono text-[12px] text-[var(--color-text)]">
-                    UTR: {fee.utrNumber}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <form action={approvePaymentAction}>
-                      <input type="hidden" name="id" value={fee.id} />
-                      <button
-                        type="submit"
-                        className="rounded-[8px] bg-[var(--color-primary)] px-3.5 py-2 text-[12px] font-bold text-white"
-                      >
-                        Approve &amp; go live
-                      </button>
-                    </form>
-                    <form action={rejectPaymentAction} className="flex flex-wrap items-center gap-2">
-                      <input type="hidden" name="id" value={fee.id} />
-                      <input
-                        name="reason"
-                        placeholder="Reject reason"
-                        className="rounded-[8px] border border-[var(--color-border)] px-2.5 py-2 text-[12px]"
-                      />
-                      <button
-                        type="submit"
-                        className="rounded-[8px] border border-[var(--color-danger)] px-3.5 py-2 text-[12px] font-bold text-[var(--color-danger)]"
-                      >
-                        Reject
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            ))}
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card>
+          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">Platform Wallet Balance</div>
+          <div className="text-xl font-extrabold text-[var(--color-text)]">
+            ₹{(revenue?.balance ?? 0).toLocaleString("en-IN")}
           </div>
         </Card>
+        <Card>
+          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">Successful Payments</div>
+          <div className="text-xl font-extrabold text-[var(--color-text)]">
+            {allPayments.filter((p) => p.status === "SUCCESS").length}
+          </div>
+        </Card>
+        <Card>
+          <div className="mb-1.5 text-xs text-[var(--color-warning)]">Pending</div>
+          <div className="text-xl font-extrabold text-[var(--color-warning)]">
+            ₹{pendingTotal.toLocaleString("en-IN")}
+          </div>
+        </Card>
+        <Card>
+          <div className="mb-1.5 text-xs text-[var(--color-danger)]">Refunds</div>
+          <div className="text-xl font-extrabold text-[var(--color-danger)]">
+            ₹{refundedTotal.toLocaleString("en-IN")}
+          </div>
+        </Card>
+      </div>
+
+      {error ? (
+        <p className="mb-4 text-xs font-semibold text-[var(--color-danger)]" role="alert">
+          {error}
+        </p>
       ) : null}
 
-      <PillTabs basePath="/payments" options={FILTERS} current={tab} />
+      <PillTabs basePath="/payments" options={FILTERS.map((f) => f.label)} current={active.label} />
 
-      {transactions.length === 0 ? (
-        <EmptyState message={`No ${tab.toLowerCase()} payments.`} />
-      ) : (
-        <TableCard>
-          <Thead
-            columns={[
-              "TXN ID",
-              "VENDOR",
-              "EVENT",
-              "UTR",
-              "AMOUNT",
-              "GATEWAY",
-              "DATE",
-              "STATUS",
-            ]}
-          />
-          <tbody>
-            {transactions.map((tx) => (
+      <TableCard>
+        <Thead
+          columns={
+            active.status === "PENDING"
+              ? ["PURPOSE", "CUSTOMER", "VENDOR", "AMOUNT", "GATEWAY", "DATE", "STATUS", ""]
+              : ["PURPOSE", "CUSTOMER", "VENDOR", "AMOUNT", "GATEWAY", "DATE", "STATUS"]
+          }
+        />
+        <tbody>
+          {transactions.length === 0 ? (
+            <tr>
+              <Td muted>No {active.label.toLowerCase()} payments.</Td>
+            </tr>
+          ) : (
+            transactions.map((tx) => (
               <Tr key={tx.id}>
-                <Td mono muted>
-                  {tx.id.slice(0, 8)}…
-                </Td>
-                <Td muted>{tx.vendor}</Td>
-                <Td muted>{tx.event}</Td>
-                <Td mono muted>
-                  {tx.utrNumber || "—"}
-                </Td>
-                <Td strong>{tx.amount}</Td>
+                <Td strong>{tx.purpose === "EVENT_CREATION" ? "Event Creation" : "Customer"}</Td>
+                <Td>{tx.customerId ? customerNames.get(tx.customerId) ?? "–" : "–"}</Td>
+                <Td muted>{tx.vendorId ? vendorNames.get(tx.vendorId) ?? "–" : "–"}</Td>
+                <Td strong>₹{tx.amount.toLocaleString("en-IN")}</Td>
                 <Td muted>{tx.gateway}</Td>
-                <Td muted>{tx.date}</Td>
+                <Td muted>{new Date(tx.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Td>
                 <Td>
-                  <StatusBadge status={tx.status} />
+                  <StatusBadge status={statusLabel(tx.status)} />
                 </Td>
+                {active.status === "PENDING" && (
+                  <Td>
+                    <div className="flex gap-1.5">
+                      <form action={approvePaymentAction.bind(null, tx.id)}>
+                        <button type="submit" className="rounded-[7px] border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-success)]">
+                          Approve
+                        </button>
+                      </form>
+                      <form action={rejectPaymentAction.bind(null, tx.id)}>
+                        <button type="submit" className="rounded-[7px] border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-danger)]">
+                          Reject
+                        </button>
+                      </form>
+                    </div>
+                  </Td>
+                )}
               </Tr>
-            ))}
-          </tbody>
-        </TableCard>
-      )}
+            ))
+          )}
+        </tbody>
+      </TableCard>
     </div>
   );
 }

@@ -2,104 +2,105 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { apiFetch, apiLogin, AUTH_COOKIE, REFRESH_COOKIE, USER_COOKIE } from "./api";
-import { cookieSecureFlag } from "./session-cookies";
+import { api, type AuthResponse } from "./api";
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, USER_COOKIE } from "./cookies";
 
-const ADMIN_BASE = process.env.NEXT_PUBLIC_ADMIN_BASE_URL || process.env.ADMIN_BASE_URL || "";
+export type AdminRole = "ADMIN" | "SUPER_ADMIN";
 
-function rethrowRedirect(err: unknown) {
-  if (
-    typeof err === "object" &&
-    err !== null &&
-    "digest" in err &&
-    typeof (err as { digest?: string }).digest === "string" &&
-    (err as { digest: string }).digest.startsWith("NEXT_REDIRECT")
-  ) {
-    throw err;
-  }
-}
+export type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: AdminRole;
+};
 
-export async function loginAction(formData: FormData) {
+export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const remember = formData.get("remember") === "on";
 
-  if (!email || !password) redirect("/login?error=1");
-
-  try {
-    const { data } = await apiLogin(email, password);
-    if (data.user.role !== "SUPER_ADMIN" && data.user.role !== "ADMIN") {
-      redirect("/login?error=role");
-    }
-    const store = await cookies();
-    // Always persist session cookies so refresh can renew the 15m access JWT.
-    const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
-    const cookieOpts = {
-      httpOnly: true,
-      sameSite: "lax" as const,
-      path: "/",
-      secure: cookieSecureFlag(ADMIN_BASE),
-      maxAge,
-    };
-    store.set(AUTH_COOKIE, data.accessToken, cookieOpts);
-    store.set(REFRESH_COOKIE, data.refreshToken, cookieOpts);
-    store.set(USER_COOKIE, JSON.stringify(data.user), cookieOpts);
-  } catch (err) {
-    rethrowRedirect(err);
+  if (!email.includes("@") || !password) {
     redirect("/login?error=1");
   }
+
+  // `redirect()` interrupts execution by throwing — it must never be called inside
+  // this try block, or the catch below would swallow a successful login as an error.
+  let response: AuthResponse;
+  try {
+    response = await api.post<AuthResponse>("/auth/login", { email, password });
+
+    if (!response.accessToken || !response.refreshToken) {
+      throw new Error("Backend did not return tokens");
+    }
+    if (response.user.role !== "ADMIN" && response.user.role !== "SUPER_ADMIN") {
+      throw new Error("Not an admin account");
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Login failed. Please try again.";
+    console.error("Login error:", errorMessage);
+    redirect("/login?error=1");
+  }
+
+  const store = await cookies();
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+    ...(remember ? { maxAge: 60 * 60 * 24 * 30 } : {}),
+  };
+
+  store.set(ACCESS_TOKEN_COOKIE, response.accessToken, cookieOptions);
+  store.set(REFRESH_TOKEN_COOKIE, response.refreshToken, cookieOptions);
+
+  store.set(
+    USER_COOKIE,
+    JSON.stringify({
+      id: response.user.id,
+      name: response.user.name,
+      email: response.user.email,
+      role: response.user.role,
+    }),
+    {
+      httpOnly: false, // Accessible to client-side (Topbar/Sidebar avatar)
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      ...(remember ? { maxAge: 60 * 60 * 24 * 30 } : {}),
+    }
+  );
+
   redirect("/dashboard");
 }
 
-export async function logoutAction() {
+export async function logout() {
   const store = await cookies();
-  const refresh = store.get(REFRESH_COOKIE)?.value;
-  if (refresh) {
-    try {
-      await apiFetch("/auth/logout", {
-        method: "POST",
-        auth: false,
-        body: JSON.stringify({ refreshToken: refresh }),
-      });
-    } catch {
-      /* ignore */
+
+  try {
+    const refreshToken = store.get(REFRESH_TOKEN_COOKIE)?.value;
+    if (refreshToken) {
+      await api.post("/auth/logout", { refreshToken });
     }
+  } catch (error) {
+    console.error("Logout API call failed:", error);
   }
-  store.delete(AUTH_COOKIE);
-  store.delete(REFRESH_COOKIE);
+
+  store.delete(ACCESS_TOKEN_COOKIE);
+  store.delete(REFRESH_TOKEN_COOKIE);
   store.delete(USER_COOKIE);
+
   redirect("/login");
 }
 
-export async function forgotPasswordAction(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  if (!email) redirect("/login?step=forgot&error=1");
-  try {
-    await apiFetch("/auth/forgot-password", {
-      method: "POST",
-      auth: false,
-      body: JSON.stringify({ email }),
-    });
-  } catch {
-    /* still redirect — don't leak existence */
-  }
-  redirect(`/login?step=otp&email=${encodeURIComponent(email)}`);
-}
+/** Get the current admin user from the (non-httpOnly) user cookie set at login. */
+export async function getAdminUser(): Promise<AdminUser | null> {
+  const store = await cookies();
+  const userCookie = store.get(USER_COOKIE)?.value;
+  if (!userCookie) return null;
 
-export async function resetPasswordAction(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const code = String(formData.get("code") ?? "").trim();
-  const newPassword = String(formData.get("password") ?? "");
-  if (!email || !code || !newPassword) redirect("/login?step=reset&error=1");
   try {
-    await apiFetch("/auth/reset-password", {
-      method: "POST",
-      auth: false,
-      body: JSON.stringify({ email, code, newPassword }),
-    });
-  } catch (err) {
-    rethrowRedirect(err);
-    redirect("/login?step=reset&error=1");
+    return JSON.parse(userCookie) as AdminUser;
+  } catch {
+    return null;
   }
-  redirect("/login?reset=1");
 }

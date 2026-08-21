@@ -1,10 +1,13 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/ui/Button";
-import { getTheme, listThemeCategories } from "@/lib/db";
-import { assignThemeToAllVendorsAction, duplicateThemeAction } from "@/lib/theme-actions";
-import { resolveThemeFields } from "@/lib/theme-templates";
-import { ThemeForm } from "../../ThemeForm";
+import { BackLink } from "@/components/ui/Button";
+import { Card, CardTitle } from "@/components/ui/Card";
+import { TextField, TextAreaField, SelectField } from "@/components/ui/Field";
+import { fetchThemeDetail, fetchThemeCategories } from "@/lib/hooks/useAdminThemes";
+import { createThemeAction, updateThemeAction } from "@/lib/themes";
+
+function toParam(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
 
 export default async function ThemeEditorPage({
   params,
@@ -12,76 +15,67 @@ export default async function ThemeEditorPage({
 }: PageProps<"/themes/[id]/edit">) {
   const { id } = await params;
   const sp = await searchParams;
-  const [theme, categories] = await Promise.all([getTheme(id), listThemeCategories()]);
-  if (!theme) notFound();
+  const error = toParam(sp.error);
+  const isNew = id === "0";
 
-  const saved = Array.isArray(sp.saved) ? sp.saved[0] : sp.saved;
-  const created = Array.isArray(sp.created) ? sp.created[0] : sp.created;
-  const assigned = Array.isArray(sp.assigned) ? sp.assigned[0] : sp.assigned;
-  const error = Array.isArray(sp.error) ? sp.error[0] : sp.error;
-  const statusValue =
-    theme.status === "Available" ? "ACTIVE" : theme.status === "Draft" ? "DRAFT" : "INACTIVE";
-  const fieldCount = resolveThemeFields(theme.config ?? { layout: theme.layout }).length;
+  const categories = await fetchThemeCategories().catch(() => []);
+  const theme = isNew ? null : await fetchThemeDetail(id);
+  if (!isNew && !theme) notFound();
+
+  const action = isNew ? createThemeAction : updateThemeAction.bind(null, id);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/themes" className="text-[13px] font-semibold text-[var(--color-text-muted)]">
-          &larr; Back to Themes &middot;{" "}
-          <span className="font-bold text-[var(--color-text)]">{theme.name}</span>
-        </Link>
-        <div className="flex flex-wrap gap-2">
-          <form action={duplicateThemeAction}>
-            <input type="hidden" name="id" value={String(theme.id)} />
-            <Button variant="secondary" type="submit">
-              Duplicate
-            </Button>
-          </form>
-          <form action={assignThemeToAllVendorsAction}>
-            <input type="hidden" name="id" value={String(theme.id)} />
-            <Button variant="secondary" type="submit">
-              Send to all vendors
-            </Button>
-          </form>
-        </div>
+    <div className="max-w-[700px]">
+      <BackLink href="/themes" label="Back to Themes" />
+      <div className="mb-5 text-[22px] font-extrabold text-[var(--color-text)]">
+        {isNew ? "Create Theme" : `Edit — ${theme!.name}`}
       </div>
 
-      {created || saved || assigned ? (
-        <p className="mb-4 text-[13px] font-semibold text-[#1E9E5A]">
-          {created
-            ? "Theme created and sent to assigned vendors."
-            : assigned
-              ? "Theme sent to all active vendors."
-              : "Theme saved."}{" "}
-          Vendors only see themes assigned to them.
-        </p>
-      ) : null}
+      <Card>
+        <CardTitle>Theme Details</CardTitle>
+        <form action={action} className="flex flex-col gap-3.5">
+          <TextField label="Name" name="name" defaultValue={theme?.name} required />
 
-      <div className="mb-5">
-        <h1 className="mb-1 text-[22px] font-extrabold text-[var(--color-text)]">Edit Theme</h1>
-        <p className="text-[13px] text-[var(--color-text-muted)]">
-          Preview how this theme renders for guests. Layout:{" "}
-          <code className="font-semibold text-[var(--color-text)]">{theme.layout ?? "—"}</code>
-          {" · "}
-          {fieldCount} vendor content fields
-        </p>
-      </div>
+          <SelectField
+            label="Category"
+            name="categoryId"
+            options={["", ...categories.map((c) => c.id)]}
+            defaultValue={theme?.categoryId ?? ""}
+          />
+          {categories.length > 0 ? (
+            <div className="-mt-2 text-xs text-[var(--color-text-muted)]">
+              Categories: {categories.map((c) => `${c.name} (${c.id.slice(0, 8)}…)`).join(" · ")}
+            </div>
+          ) : null}
 
-      <ThemeForm
-        mode="edit"
-        error={error}
-        categories={categories}
-        initial={{
-          id: String(theme.id),
-          name: theme.name,
-          layout: theme.layout,
-          previewImage: theme.previewImage,
-          status: statusValue,
-          slug: theme.slug,
-          categoryId: theme.categoryId,
-          config: theme.config ?? undefined,
-        }}
-      />
+          <SelectField
+            label="Status"
+            name="status"
+            options={["DRAFT", "ACTIVE", "INACTIVE"]}
+            defaultValue={theme?.status ?? "DRAFT"}
+          />
+
+          <TextAreaField
+            label="Config (JSON)"
+            name="config"
+            placeholder='{"primaryColor": "#FF7A00"}'
+            defaultValue={theme ? JSON.stringify(theme.config, null, 2) : "{}"}
+          />
+
+          {error ? (
+            <p className="text-xs font-semibold text-[var(--color-danger)]" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            className="w-fit rounded-[9px] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] px-6 py-2.5 text-[13px] font-bold text-white"
+          >
+            {isNew ? "Create Theme" : "Save Changes"}
+          </button>
+        </form>
+      </Card>
     </div>
   );
 }
