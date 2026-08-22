@@ -30,7 +30,7 @@ export async function approvePaymentAction(formData: FormData) {
   } catch {
     redirect("/payments?tab=Pending&error=approve");
   }
-  redirect("/payments?tab=Successful");
+  redirect("/payments?tab=Successful&success=Payment%20approved");
 }
 
 export async function rejectPaymentAction(formData: FormData) {
@@ -42,5 +42,5 @@ export async function rejectPaymentAction(formData: FormData) {
   } catch {
     redirect("/payments?tab=Pending&error=reject");
   }
-  redirect("/payments?tab=Failed");
+  redirect("/payments?tab=Failed&success=Payment%20rejected");
 }

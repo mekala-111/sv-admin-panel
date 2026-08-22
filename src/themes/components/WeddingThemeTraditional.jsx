@@ -178,7 +178,13 @@ export default function WeddingThemeTraditional({
   const gallery = media.filter((m) => m?.fileUrl || m?.thumbnailUrl);
   const galleryUrls = gallery.map((m) => m.thumbnailUrl || m.fileUrl).filter(Boolean);
   const subEvents = Array.isArray(event?.subEvents) ? event.subEvents.filter((s) => s?.title) : [];
-  const invitationCard = event?.invitationCard ? coverSrc(event.invitationCard) : DEFAULT_INVITE;
+  const showInvitationSection =
+    sections.showInvitationCard !== false && event?.showInvitationCard !== false;
+  const invitationCard = showInvitationSection
+    ? event?.invitationCard
+      ? coverSrc(event.invitationCard)
+      : DEFAULT_INVITE
+    : null;
   const countdown = useCountdown(resolveCountdownTarget(event));
   const shareUrl = useMemo(() => {
     if (typeof window !== "undefined") return window.location.href;
@@ -723,7 +729,7 @@ export default function WeddingThemeTraditional({
             </div>
           </section>
 
-          {sections.showInvitationCard !== false && invitationCard ? (
+          {showInvitationSection && invitationCard ? (
             <section className="section invite" id="invitation">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="invite-bg" src={`${ASSET}/entirepg bg.png`} alt="" />

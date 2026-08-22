@@ -34,7 +34,7 @@ export async function createVendorAction(formData: FormData) {
     invitationCreationFee,
     initialWalletCredit,
   });
-  redirect(`/vendors/${vendor.id}`);
+  redirect(`/vendors/${vendor.id}?success=Vendor%20created`);
 }
 
 export async function updateVendorAction(formData: FormData) {
@@ -62,7 +62,7 @@ export async function updateVendorAction(formData: FormData) {
   } catch {
     redirect(`/vendors/${id}/edit?error=1`);
   }
-  redirect(`/vendors/${id}`);
+  redirect(`/vendors/${id}?saved=1`);
 }
 
 export async function suspendVendorAction(formData: FormData) {
@@ -73,7 +73,7 @@ export async function suspendVendorAction(formData: FormData) {
   } catch {
     redirect(`/vendors/${id}?error=suspend`);
   }
-  redirect(`/vendors/${id}`);
+  redirect(`/vendors/${id}?success=Vendor%20suspended`);
 }
 
 export async function activateVendorAction(formData: FormData) {
@@ -84,7 +84,7 @@ export async function activateVendorAction(formData: FormData) {
   } catch {
     redirect(`/vendors/${id}?error=activate`);
   }
-  redirect(`/vendors/${id}`);
+  redirect(`/vendors/${id}?success=Vendor%20activated`);
 }
 
 export async function createNotificationAction(formData: FormData) {
@@ -103,5 +103,5 @@ export async function createNotificationAction(formData: FormData) {
   }
 
   await createNotification({ title, message, audience, type });
-  redirect("/notifications");
+  redirect("/notifications?success=Notification%20sent");
 }

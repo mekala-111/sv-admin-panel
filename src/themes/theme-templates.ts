@@ -14,7 +14,6 @@ export type ThemeFieldDef = {
   required?: boolean;
   placeholder?: string;
   hint?: string;
-  maxBytes?: number;
   maxItems?: number;
 };
 
@@ -58,13 +57,13 @@ export const WEDDING_FIELDS: ThemeFieldDef[] = [
     key: "brideImage",
     label: "Bride image",
     type: "image",
-    hint: "JPEG/PNG/WebP",
+    hint: "Any size · JPEG/PNG/WebP",
   },
   {
     key: "groomImage",
     label: "Groom image",
     type: "image",
-    hint: "JPEG/PNG/WebP",
+    hint: "Any size · JPEG/PNG/WebP",
   },
   { key: "eventDate", label: "Event date", type: "date" },
   { key: "eventTime", label: "Event time", type: "text", placeholder: "6:00 PM IST" },
@@ -74,7 +73,7 @@ export const WEDDING_FIELDS: ThemeFieldDef[] = [
     key: "invitationCard",
     label: "Invitation card",
     type: "image",
-    hint: "Full invitation image",
+    hint: "Any size · full invitation image",
   },
   { key: "galleryImages", label: "Gallery images", type: "gallery", maxItems: 20 },
   { key: "description", label: "Blessing message", type: "textarea", placeholder: "Divine blessings text" },
@@ -85,8 +84,8 @@ export const WEDDING_FIELDS: ThemeFieldDef[] = [
     placeholder: "Host names on first line, place on second line",
   },
   { key: "remarks2", label: "Family members", type: "textarea", placeholder: "One paragraph per line" },
-  { key: "logoImage", label: "Host photo 1", type: "image", hint: "JPEG/PNG/WebP" },
-  { key: "customImage", label: "Host photo 2", type: "image", hint: "JPEG/PNG/WebP" },
+  { key: "logoImage", label: "Host photo 1", type: "image", hint: "Any size · JPEG/PNG/WebP" },
+  { key: "customImage", label: "Host photo 2", type: "image", hint: "Any size · JPEG/PNG/WebP" },
 ];
 
 export const LIVE_EVENT_FIELDS: ThemeFieldDef[] = [
@@ -98,7 +97,7 @@ export const LIVE_EVENT_FIELDS: ThemeFieldDef[] = [
     key: "coverImage",
     label: "Cover image",
     type: "image",
-    hint: "JPEG/PNG/WebP",
+    hint: "Any size · JPEG/PNG/WebP",
   },
   { key: "scrollMessage", label: "Ticker message", type: "textarea", placeholder: "Welcome message" },
   { key: "galleryImages", label: "Gallery images", type: "gallery", maxItems: 12 },

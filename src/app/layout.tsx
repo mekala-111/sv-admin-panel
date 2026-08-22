@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppToasts } from "@/components/toast/AppToasts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             '-apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif',
         }}
       >
-        {children}
+        <AppToasts>{children}</AppToasts>
       </body>
     </html>
   );
