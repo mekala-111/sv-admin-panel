@@ -101,7 +101,23 @@ export default function SacredGardenTheme({
   const [watching, setWatching] = useState(true);
 
   const embed = useMemo(() => youtubeEmbedUrl(youtube), [youtube]);
-  const sections = useMemo(() => resolveThemeSections(theme), [theme]);
+  const sectionOverrides = useMemo(
+    () => ({
+      showSubEvents: branding?.customConfig?.showSubEvents ?? event?.showSubEvents,
+      showInvitationCard:
+        branding?.customConfig?.showInvitationCard ?? event?.showInvitationCard,
+    }),
+    [
+      branding?.customConfig?.showSubEvents,
+      branding?.customConfig?.showInvitationCard,
+      event?.showSubEvents,
+      event?.showInvitationCard,
+    ]
+  );
+  const sections = useMemo(
+    () => resolveThemeSections(theme, sectionOverrides),
+    [theme, sectionOverrides]
+  );
   const showLive = shouldShowLivePlayer(sections, youtube, embed, event);
   const isLive = event?.status === "LIVE" || youtube?.status === "LIVE";
   const { left, right } = splitCoupleName(event);

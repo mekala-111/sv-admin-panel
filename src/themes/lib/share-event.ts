@@ -25,6 +25,11 @@ export function resolveEventShareImageUrl(
   return absoluteShareImageUrl(candidate);
 }
 
+function isMobileShareClient() {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+}
+
 export function buildEventShareText({
   url,
   title,
@@ -43,23 +48,42 @@ export function buildEventShareText({
   placeLine?: string;
 }) {
   const lines = [
-    url,
-    "",
     coupleLine ? `🌸 ${coupleLine} 🌸` : null,
-    "",
     tagline || title || "You're invited to celebrate with us!",
     dateLine ? `📅 ${dateLine}` : null,
     timeLine ? `⏰ ${timeLine}` : null,
-    placeLine || null,
+    placeLine ? `📍 ${placeLine}` : null,
     "",
     `💍 View invitation:\n${url}`,
-  ].filter(Boolean);
+  ].filter((line) => line != null && line !== "");
   return lines.join("\n");
+}
+
+async function copyShareText(message: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(message);
+    return true;
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = message;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Share event with image + link when the device supports it.
- * Falls back to WhatsApp text share, then plain Web Share text.
+ * Desktop Chromium file+text shares pollute "Copy" with a local file path —
+ * so files are only attached on mobile.
  */
 export async function shareEventWithImage({
   url,
@@ -80,8 +104,9 @@ export async function shareEventWithImage({
   };
 
   const absoluteImage = absoluteShareImageUrl(imageUrl);
+  const allowFileShare = isMobileShareClient();
 
-  if (absoluteImage) {
+  if (allowFileShare && absoluteImage) {
     try {
       const res = await fetch(absoluteImage);
       if (res.ok) {
@@ -100,12 +125,15 @@ export async function shareEventWithImage({
 
   if (typeof navigator.share === "function") {
     try {
-      await navigator.share({ text: message, url, title: title || undefined });
+      await navigator.share({ text: message, title: title || undefined });
       return;
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
     }
   }
+
+  const copied = await copyShareText(message);
+  if (copied) return;
 
   openWhatsApp();
 }

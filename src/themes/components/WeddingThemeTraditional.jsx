@@ -161,7 +161,23 @@ export default function WeddingThemeTraditional({
   const [musicAvailable, setMusicAvailable] = useState(true);
 
   const embed = useMemo(() => youtubeEmbedUrl(youtube), [youtube]);
-  const sections = useMemo(() => resolveThemeSections(theme), [theme]);
+  const sectionOverrides = useMemo(
+    () => ({
+      showSubEvents: branding?.customConfig?.showSubEvents ?? event?.showSubEvents,
+      showInvitationCard:
+        branding?.customConfig?.showInvitationCard ?? event?.showInvitationCard,
+    }),
+    [
+      branding?.customConfig?.showSubEvents,
+      branding?.customConfig?.showInvitationCard,
+      event?.showSubEvents,
+      event?.showInvitationCard,
+    ]
+  );
+  const sections = useMemo(
+    () => resolveThemeSections(theme, sectionOverrides),
+    [theme, sectionOverrides]
+  );
   const showLive = shouldShowLivePlayer(sections, youtube, embed, event);
   const isLive = event?.status === "LIVE" || youtube?.status === "LIVE";
   const { left, right } = splitCoupleName(event);
@@ -178,8 +194,7 @@ export default function WeddingThemeTraditional({
   const gallery = media.filter((m) => m?.fileUrl || m?.thumbnailUrl);
   const galleryUrls = gallery.map((m) => m.thumbnailUrl || m.fileUrl).filter(Boolean);
   const subEvents = Array.isArray(event?.subEvents) ? event.subEvents.filter((s) => s?.title) : [];
-  const showInvitationSection =
-    sections.showInvitationCard !== false && event?.showInvitationCard !== false;
+  const showInvitationSection = sections.showInvitationCard !== false;
   const invitationCard = showInvitationSection
     ? event?.invitationCard
       ? coverSrc(event.invitationCard)
@@ -266,9 +281,8 @@ export default function WeddingThemeTraditional({
         tagline,
         dateLine: dateDots,
         timeLine: eventTime,
-        placeLine: place,
       }),
-    [shareUrl, title, left, right, tagline, dateDots, eventTime, place]
+    [shareUrl, title, left, right, tagline, dateDots, eventTime]
   );
 
   const shareInvite = useCallback(
@@ -673,7 +687,7 @@ export default function WeddingThemeTraditional({
             </div>
           </section>
 
-          {sections.showSubEvents !== false && event?.showSubEvents !== false && subEvents.length > 0 ? (
+          {sections.showSubEvents !== false && subEvents.length > 0 ? (
             <section className="section events" id="events">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="events-bg" src={`${ASSET}/entirepg bg.png`} alt="" />
