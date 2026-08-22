@@ -15,6 +15,75 @@ export function coverSrc(url: unknown) {
   return url;
 }
 
+/** YYYY-MM-DD from eventDate (ISO string, date-only, or Date). */
+export function toDateOnly(value: unknown): string | null {
+  if (value == null || value === "") return null;
+  if (typeof value === "string") {
+    const m = value.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+  }
+  const d = value instanceof Date ? value : new Date(value as string | number);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mo}-${day}`;
+}
+
+/** Parse "11:30", "11:30:00", "11:30 am", "6:00 PM IST" → HH:mm:ss */
+export function parseTimeToHms(timeRaw: string): string | null {
+  const m = timeRaw.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp][Mm]))?/);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = Number(m[2]);
+  const sec = m[3] != null ? Number(m[3]) : 0;
+  const ampm = m[4]?.toUpperCase();
+  if (ampm === "PM" && h < 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  if (Number.isNaN(h) || Number.isNaN(min) || h > 23 || min > 59 || sec > 59) return null;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
+/**
+ * Countdown target from Theme Content fields: Event date + Event time.
+ * Falls back to startTime, then eventDate at midnight (local).
+ */
+export function resolveCountdownTarget(event?: {
+  eventDate?: string | Date | null;
+  eventTime?: string | null;
+  startTime?: string | Date | null;
+} | null): string | null {
+  if (!event) return null;
+
+  const datePart = toDateOnly(event.eventDate);
+  const timeRaw = typeof event.eventTime === "string" ? event.eventTime.trim() : "";
+  if (datePart && timeRaw) {
+    const timePart = parseTimeToHms(timeRaw);
+    if (timePart) return `${datePart}T${timePart}`;
+  }
+
+  if (datePart && !timeRaw) {
+    // Prefer startTime's clock if we only have a date field.
+    if (event.startTime) {
+      const st = new Date(event.startTime);
+      if (!Number.isNaN(st.getTime())) {
+        const h = String(st.getHours()).padStart(2, "0");
+        const min = String(st.getMinutes()).padStart(2, "0");
+        const sec = String(st.getSeconds()).padStart(2, "0");
+        return `${datePart}T${h}:${min}:${sec}`;
+      }
+    }
+    return `${datePart}T00:00:00`;
+  }
+
+  if (event.startTime) {
+    const st = new Date(event.startTime);
+    if (!Number.isNaN(st.getTime())) return st.toISOString();
+  }
+
+  return null;
+}
+
 export function formatEventDate(value: unknown) {
   if (typeof value !== "string" && typeof value !== "number" && !(value instanceof Date)) {
     return null;

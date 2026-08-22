@@ -740,7 +740,8 @@ a {
   transform: translateX(-0.15em);
 }
 
-.event-card.highlight {
+.event-card.highlight,
+.event-card.plain {
   background: transparent;
   border: 0;
   color: var(--maroon);
@@ -755,16 +756,25 @@ a {
   display: block;
 }
 
-.wedding-icon {
+.wedding-icon,
+.sub-event-photo {
   width: 90%;
-  max-height: none;
+  max-height: 72px;
   height: auto;
   object-fit: contain;
   display: block;
-  margin: 0 auto;
+  margin: 0 auto 6px;
+  border-radius: 8px;
 }
 
-.event-card.highlight .event-card-body {
+.sub-event-photo {
+  max-height: 88px;
+  object-fit: cover;
+  border: 1px solid rgba(184, 140, 44, 0.35);
+}
+
+.event-card.highlight .event-card-body,
+.event-card.plain .event-card-body {
   top: 14%;
   bottom: 11%;
   left: 14%;
@@ -773,7 +783,8 @@ a {
   gap: 0;
 }
 
-.event-card.highlight .event-row {
+.event-card.highlight .event-row,
+.event-card.plain .event-row {
   font-size: 15px;
 }
 
@@ -788,7 +799,8 @@ a {
   text-align: center;
 }
 
-.event-card.highlight h3 {
+.event-card.highlight h3,
+.event-card.plain h3 {
   color: var(--maroon);
 }
 
@@ -1656,8 +1668,8 @@ a {
 
 @media (min-width: 560px) {
   .event-grid {
-    grid-template-columns: 1fr 1fr;
-    max-width: 480px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    max-width: 720px;
     gap: 14px;
   }
 
@@ -1671,7 +1683,8 @@ a {
     margin: 3px 0;
   }
 
-  .event-card.highlight .event-row {
+  .event-card.highlight .event-row,
+  .event-card.plain .event-row {
     font-size: 13px;
     margin: 0;
   }

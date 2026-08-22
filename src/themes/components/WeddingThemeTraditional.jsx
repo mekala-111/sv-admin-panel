@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { coverSrc, youtubeEmbedUrl } from "../lib/event-helpers";
+import { coverSrc, resolveCountdownTarget, youtubeEmbedUrl } from "../lib/event-helpers";
 import {
   buildEventShareText,
   resolveEventShareImageUrl,
@@ -179,7 +179,7 @@ export default function WeddingThemeTraditional({
   const galleryUrls = gallery.map((m) => m.thumbnailUrl || m.fileUrl).filter(Boolean);
   const subEvents = Array.isArray(event?.subEvents) ? event.subEvents.filter((s) => s?.title) : [];
   const invitationCard = event?.invitationCard ? coverSrc(event.invitationCard) : DEFAULT_INVITE;
-  const countdown = useCountdown(event?.startTime || event?.eventDate);
+  const countdown = useCountdown(resolveCountdownTarget(event));
   const shareUrl = useMemo(() => {
     if (typeof window !== "undefined") return window.location.href;
     return publicPath || "";
@@ -359,24 +359,26 @@ export default function WeddingThemeTraditional({
     const isSingle = subEvents.length === 1;
     const isFirst = !isSingle && index === 0;
     const isHighlight = isSingle || index === subEvents.length - 1;
-    const cardClass = isFirst ? "pellikuthuru" : isHighlight ? "highlight" : "";
+    const cardClass = isFirst ? "pellikuthuru" : isHighlight ? "highlight" : "plain";
+    const customImage = item.image ? coverSrc(item.image) : null;
+    // Always render a frame so absolutely-positioned card body has height (3rd+ cards were invisible).
+    const frameSrc = isFirst
+      ? `${ASSET}/bride-event.png`
+      : `${ASSET}/event-frame.png`;
 
     return (
       <article className={`event-card ${cardClass}`.trim()} key={`${item.title}-${index}`}>
-        {isFirst ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="event-frame" src={`${ASSET}/bride-event.png`} alt="" />
-        ) : isHighlight ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="event-frame" src={`${ASSET}/event-frame.png`} alt="" />
-        ) : null}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="event-frame" src={frameSrc} alt="" />
         <div className="event-card-body">
-          {isHighlight && (isSingle || !isFirst) ? (
+          {customImage ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="wedding-icon" src={`${ASSET}/wedding-icon.png`} alt={item.title} />
-          ) : (
-            <h3>{item.title}</h3>
-          )}
+            <img className="sub-event-photo" src={customImage} alt={item.title} />
+          ) : isHighlight && !isFirst ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="wedding-icon" src={`${ASSET}/wedding-icon.png`} alt="" />
+          ) : null}
+          <h3>{item.title}</h3>
           {item.date ? <EventRow>{item.date}</EventRow> : null}
           {item.time ? <TimeRow>{item.time}</TimeRow> : null}
           {item.place ? <PlaceRow>{item.place}</PlaceRow> : null}
@@ -554,6 +556,41 @@ export default function WeddingThemeTraditional({
             ) : null}
           </header>
 
+          {sections.showCountdown !== false && countdown ? (
+            <section className="section countdown" id="countdown">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="countdown-bg" src={`${ASSET}/entirepg bg.png`} alt="" />
+              <div className="countdown-inner">
+                <div className="ornament">✦ 🪷 ✦</div>
+                <h2 className="te-title">❦ వివాహానికి మిగిలిన సమయం ❦</h2>
+                <div className="rule" />
+                {countdown.ended ? (
+                  <div className="ended">శుభమస్తు ❤️</div>
+                ) : (
+                  <div className="count-row" id="count-active">
+                    {[
+                      ["DAYS", countdown.days],
+                      ["HOURS", countdown.hours],
+                      ["MINUTES", countdown.minutes],
+                      ["SECONDS", countdown.seconds],
+                    ].map(([label, value]) => (
+                      <div className="count-box" key={label}>
+                        <div>🪷</div>
+                        <strong>{pad(value)}</strong>
+                        <small>{label}</small>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="heart-rule" aria-hidden="true">
+                  <i />
+                  <span>♥</span>
+                  <i />
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           {showLive ? (
             <section className={`section ${styles.liveSection}`} id="live">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -572,27 +609,46 @@ export default function WeddingThemeTraditional({
                       className={styles.player}
                     />
                   ) : (
-                    <button
-                      type="button"
+                    <div
                       className={styles.poster}
-                      onClick={() => setWatching(true)}
                       style={{ backgroundImage: `url(${cover || DEFAULT_POSTER})` }}
+                      role={embed ? "button" : "img"}
+                      tabIndex={embed ? 0 : undefined}
+                      onClick={() => embed && setWatching(true)}
+                      onKeyDown={(e) => {
+                        if (embed && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          setWatching(true);
+                        }
+                      }}
                     >
                       <span className={styles.posterShade} />
-                      <span className="intro-cta">{embed ? "Watch Live" : "Stream starting soon"}</span>
-                    </button>
+                      {embed ? (
+                        <button type="button" className={styles.streamStatus} onClick={() => setWatching(true)}>
+                          Watch Live
+                        </button>
+                      ) : (
+                        <span className={styles.streamStatusMuted}>Stream starting soon</span>
+                      )}
+                    </div>
                   )}
                 </div>
-                {event?.showWatchLive !== false ? (
+                {embed && event?.showWatchLive !== false ? (
                   <div className={styles.centerActions}>
                     <button type="button" className="intro-cta" onClick={() => setWatching(true)}>
-                      {embed ? "Watch Live" : "Stream starting soon"}
+                      {watching ? "Watching live" : "Watch Live"}
                     </button>
                     {event?.showSocialShare !== false && shareUrl ? (
                       <button type="button" className={styles.shareBtn} onClick={shareInvite}>
                         Share on WhatsApp
                       </button>
                     ) : null}
+                  </div>
+                ) : event?.showSocialShare !== false && shareUrl ? (
+                  <div className={styles.centerActions}>
+                    <button type="button" className={styles.shareBtn} onClick={shareInvite}>
+                      Share on WhatsApp
+                    </button>
                   </div>
                 ) : null}
               </div>
@@ -637,41 +693,6 @@ export default function WeddingThemeTraditional({
                   <i />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`${ASSET}/gold-flourish.svg`} alt="" />
-                  <i />
-                </div>
-              </div>
-            </section>
-          ) : null}
-
-          {sections.showCountdown !== false && countdown ? (
-            <section className="section countdown" id="countdown">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="countdown-bg" src={`${ASSET}/entirepg bg.png`} alt="" />
-              <div className="countdown-inner">
-                <div className="ornament">✦ 🪷 ✦</div>
-                <h2 className="te-title">❦ వివాహానికి మిగిలిన సమయం ❦</h2>
-                <div className="rule" />
-                {countdown.ended ? (
-                  <div className="ended">శుభమస్తు ❤️</div>
-                ) : (
-                  <div className="count-row" id="count-active">
-                    {[
-                      ["DAYS", countdown.days],
-                      ["HOURS", countdown.hours],
-                      ["MINUTES", countdown.minutes],
-                      ["SECONDS", countdown.seconds],
-                    ].map(([label, value]) => (
-                      <div className="count-box" key={label}>
-                        <div>🪷</div>
-                        <strong>{pad(value)}</strong>
-                        <small>{label}</small>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="heart-rule" aria-hidden="true">
-                  <i />
-                  <span>♥</span>
                   <i />
                 </div>
               </div>

@@ -5,6 +5,7 @@ import {
   coverSrc,
   formatEventDate,
   formatEventDateTime,
+  resolveCountdownTarget,
   youtubeEmbedUrl,
 } from "../lib/event-helpers";
 import {
@@ -81,9 +82,7 @@ export default function TraditionalStreamingTheme({
   const scrollMessage = event?.scrollMessage || theme?.config?.defaults?.scrollMessage || DEFAULT_SCROLL;
   const dateInfo = formatEventDate(event?.eventDate);
   const timeLabel = formatTimeLabel(event);
-  const countdownTarget = event?.eventDate
-    ? `${event.eventDate}${event?.startTime ? `T${new Date(event.startTime).toISOString().slice(11, 19)}` : "T18:00:00"}`
-    : null;
+  const countdownTarget = resolveCountdownTarget(event);
   const countdown = useCountdown(sections.showCountdown !== false ? countdownTarget : null);
   const shareImageUrl = useMemo(() => resolveEventShareImageUrl(event), [event]);
   const shareText = useMemo(
