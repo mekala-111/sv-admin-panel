@@ -8,15 +8,33 @@ export default function ThemePreviewPage() {
   const [payload, setPayload] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
+    let id: number | undefined;
+
+    function announceReady() {
+      window.parent?.postMessage({ type: "SV_THEME_PREVIEW_READY" }, "*");
+    }
+
     function onMessage(event: MessageEvent) {
+      if (event.data?.type === "SV_THEME_PREVIEW_REQUEST") {
+        announceReady();
+        return;
+      }
       if (event.data?.type !== "SV_THEME_PREVIEW") return;
       setPayload((event.data.payload as Record<string, unknown>) ?? null);
+      if (id != null) {
+        window.clearInterval(id);
+        id = undefined;
+      }
     }
 
     window.addEventListener("message", onMessage);
-    window.parent?.postMessage({ type: "SV_THEME_PREVIEW_READY" }, "*");
+    announceReady();
+    id = window.setInterval(announceReady, 1000);
 
-    return () => window.removeEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      if (id != null) window.clearInterval(id);
+    };
   }, []);
 
   const event = payload?.event as Record<string, unknown> | undefined;

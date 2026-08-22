@@ -43,11 +43,6 @@ export function PaymentSettingsForm({
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            if (file.size > 2 * 1024 * 1024) {
-              setError("QR image must be under 2MB");
-              e.target.value = "";
-              return;
-            }
             setError("");
             const reader = new FileReader();
             reader.onload = () => setPreview(typeof reader.result === "string" ? reader.result : "");

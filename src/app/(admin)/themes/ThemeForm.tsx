@@ -199,11 +199,6 @@ export function ThemeEditor({
                     setPreviewImage("");
                     return;
                   }
-                  if (file.size > 2 * 1024 * 1024) {
-                    setImageError("Image must be under 2MB");
-                    e.target.value = "";
-                    return;
-                  }
                   setImageError("");
                   setCustomImage(true);
                   const reader = new FileReader();

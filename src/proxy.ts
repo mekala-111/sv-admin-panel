@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { adminAbsoluteUrl } from "@/lib/admin-origin";
 import { attachRefreshedSessionCookies } from "@/lib/session-cookies";
 
-const PUBLIC = ["/login"];
+const PUBLIC = ["/login", "/preview"];
 const ADMIN_BASE =
   process.env.NEXT_PUBLIC_ADMIN_BASE_URL || process.env.ADMIN_BASE_URL || "";
 
@@ -57,5 +57,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/vendors/:path*", "/customers/:path*", "/events/:path*", "/themes/:path*", "/youtube/:path*", "/recordings/:path*", "/payments/:path*", "/wallet/:path*", "/pricing/:path*", "/analytics/:path*", "/reports/:path*", "/notifications/:path*", "/support/:path*", "/users-roles/:path*", "/settings/:path*", "/audit-logs/:path*", "/profile/:path*"],
+  matcher: ["/", "/login", "/preview/:path*", "/dashboard/:path*", "/vendors/:path*", "/customers/:path*", "/events/:path*", "/themes/:path*", "/youtube/:path*", "/recordings/:path*", "/payments/:path*", "/wallet/:path*", "/pricing/:path*", "/analytics/:path*", "/reports/:path*", "/notifications/:path*", "/support/:path*", "/users-roles/:path*", "/settings/:path*", "/audit-logs/:path*", "/profile/:path*"],
 };
