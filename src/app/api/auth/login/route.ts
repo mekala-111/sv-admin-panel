@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiLogin, AUTH_COOKIE, REFRESH_COOKIE, USER_COOKIE } from "@/lib/api";
+import { adminAbsoluteUrl } from "@/lib/admin-origin";
 
 function loginRedirect(req: NextRequest, query: string) {
-  return NextResponse.redirect(new URL(`/login?${query}`, req.url), 303);
+  return NextResponse.redirect(adminAbsoluteUrl(`/login?${query}`, req), 303);
 }
 
 export async function POST(req: NextRequest) {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
       return loginRedirect(req, "error=role");
     }
 
-    const res = NextResponse.redirect(new URL("/dashboard", req.url), 303);
+    const res = NextResponse.redirect(adminAbsoluteUrl("/dashboard", req), 303);
     const cookieOpts = {
       httpOnly: true,
       sameSite: "lax" as const,

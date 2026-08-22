@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { adminAbsoluteUrl } from "@/lib/admin-origin";
 
 const PUBLIC = ["/login"];
 
@@ -23,7 +24,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(authed ? "/dashboard" : "/login", request.url));
+    return NextResponse.redirect(adminAbsoluteUrl(authed ? "/dashboard" : "/login", request));
   }
 
   if (isPublicThemeAsset(pathname)) {
@@ -32,10 +33,10 @@ export function proxy(request: NextRequest) {
 
   const isPublic = PUBLIC.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (!isPublic && !authed) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(adminAbsoluteUrl("/login", request));
   }
   if (pathname === "/login" && authed) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(adminAbsoluteUrl("/dashboard", request));
   }
 
   return NextResponse.next();
