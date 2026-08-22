@@ -250,6 +250,33 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
       },
     },
   },
+  {
+    id: "the-sacred-garden",
+    label: "The Sacred Garden",
+    description:
+      "Soft ivory garden invitation — Pinyon Script, gold accents, envelope open, and petal field.",
+    previewImage: "/themes/the-sacred-garden/assets/couple-portrait.webp",
+    config: {
+      layout: "the-sacred-garden",
+      colors: {
+        primary: "#A67D2B",
+        secondary: "#5A0F1B",
+        accent: "#87966C",
+        background: "#FFF9EB",
+        text: "#6C513F",
+      },
+      fontFamily: "Pinyon Script, Cinzel, Cormorant Garamond, serif",
+      assetPath: "/themes/the-sacred-garden",
+      sections: WEDDING_SECTIONS,
+      fields: WEDDING_FIELDS,
+      defaults: {
+        tagline: "The Sacred Garden",
+        scrollMessage: "Together with their families",
+        description:
+          "Two souls, one beautiful journey, surrounded by love, blessed by family, and beginning forever together.",
+      },
+    },
+  },
 ];
 
 export function getThemeTemplate(id: string): ThemeTemplate | undefined {

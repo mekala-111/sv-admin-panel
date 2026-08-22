@@ -1,6 +1,7 @@
 "use client";
 
 import EventThemeShell from "./EventThemeShell";
+import SacredGardenTheme from "./SacredGardenTheme";
 import TraditionalStreamingTheme from "./TraditionalStreamingTheme";
 import WeddingThemeTraditional from "./WeddingThemeTraditional";
 
@@ -12,6 +13,7 @@ const LAYOUT_RENDERERS = {
   "wedding-theme-traditional": WeddingThemeTraditional,
   "telugu-wedding-traditional": WeddingThemeTraditional,
   "traditional-streaming": TraditionalStreamingTheme,
+  "the-sacred-garden": SacredGardenTheme,
 };
 
 function resolveLayoutRenderer(layout) {
@@ -19,6 +21,9 @@ function resolveLayoutRenderer(layout) {
   if (LAYOUT_RENDERERS[layout]) return LAYOUT_RENDERERS[layout];
   if (layout.includes("wedding-traditional") || layout.includes("telugu-wedding")) {
     return WeddingThemeTraditional;
+  }
+  if (layout.includes("sacred-garden") || layout.includes("sacredgarden")) {
+    return SacredGardenTheme;
   }
   return EventThemeShell;
 }
