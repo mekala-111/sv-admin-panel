@@ -6,7 +6,7 @@ export async function GET(
   ctx: RouteContext<"/api/themes/[id]">
 ) {
   const { id } = await ctx.params;
-  const theme = getTheme(Number(id));
+  const theme = await getTheme(id);
   if (!theme) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

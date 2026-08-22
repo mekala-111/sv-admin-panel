@@ -4,8 +4,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
 import { listCustomers } from "@/lib/db";
 
-export default function CustomersPage() {
-  const customers = listCustomers();
+export default async function CustomersPage() {
+  const customers = await listCustomers();
 
   return (
     <div>

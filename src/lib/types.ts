@@ -1,19 +1,25 @@
 export type Vendor = {
-  id: number;
+  id: string | number;
   name: string;
   company: string;
   email: string;
+  phone?: string;
+  address?: string;
   events: number;
   customers: number;
   revenue: string;
   wallet: string;
+  /** @deprecated Legacy single fee — use liveEventCreationFee / invitationCreationFee */
+  eventCreationFee?: number;
+  liveEventCreationFee?: number;
+  invitationCreationFee?: number;
   status: "Active" | "Pending" | "Suspended";
   created: string;
   logoId: string;
 };
 
 export type Customer = {
-  id: number;
+  id: string | number;
   name: string;
   vendor: string;
   events: number;
@@ -25,7 +31,7 @@ export type Customer = {
 };
 
 export type Event = {
-  id: number;
+  id: string | number;
   name: string;
   customer: string;
   vendor: string;
@@ -56,6 +62,10 @@ export type Transaction = {
   gateway: string;
   date: string;
   status: "Successful" | "Pending" | "Failed" | "Refunded";
+  purpose?: string;
+  utrNumber?: string;
+  paymentImage?: string;
+  rejectionReason?: string;
 };
 
 export type WalletTx = {
@@ -85,7 +95,7 @@ export type AuditLog = {
 };
 
 export type Notification = {
-  id: number;
+  id: string | number;
   message: string;
   category: "System" | "Payments" | "Streaming" | "Vendors" | "Customers";
   time: string;
@@ -99,14 +109,19 @@ export type Role = {
 };
 
 export type Theme = {
-  id: number;
+  id: string | number;
   name: string;
   category: string;
   vendors: number;
-  status: "Available" | "Disabled";
+  status: "Available" | "Disabled" | "Draft";
   imgId: string;
   primary: string;
   secondary: string;
+  slug?: string;
+  layout?: string;
+  fontFamily?: string;
+  colors?: Record<string, string>;
+  _id?: string;
 };
 
 export type SessionInfo = {
@@ -141,22 +156,26 @@ export type Plan = {
 };
 
 export type Channel = {
-  id: number;
+  id: string | number;
   name: string;
   vendor: string;
   channelId: string;
   connectedDate: string;
   status: "Active" | "Pending";
   totalStreams: number;
+  liveStreams: number;
+  lastSync: string;
 };
 
 export type EventStream = {
-  id: number;
+  id: string | number;
   event: string;
   vendor: string;
   customer: string;
+  channel: string;
   videoId: string;
-  status: "Live" | "Completed";
+  liveUrl: string | null;
+  status: "Live" | "Completed" | "Upcoming" | "Error";
   date: string;
   views: number;
 };

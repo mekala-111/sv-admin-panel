@@ -1,9 +1,12 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { getSessionUser } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const user = await getSessionUser();
+
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-[var(--color-bg)]">
       <input id="admin-nav" type="checkbox" className="peer hidden" />
@@ -16,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Sidebar />
       </div>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar />
+        <Topbar userName={user?.name} userRole={user?.role} />
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-7">
           {children}
         </div>

@@ -25,7 +25,7 @@ export function Button({
   children: ReactNode;
   variant?: Variant;
   href?: string;
-  type?: "button" | "submit";
+  type?: "button" | "submit" | "reset";
   className?: string;
 }) {
   const classes = `inline-flex items-center justify-center gap-2 rounded-[9px] px-4 py-2.5 text-[13px] ${VARIANT_CLASSES[variant]} ${className}`;

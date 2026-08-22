@@ -14,7 +14,7 @@ export default async function CustomerDetailPage({
 }: PageProps<"/customers/[id]">) {
   const { id } = await params;
   const sp = await searchParams;
-  const customer = getCustomer(Number(id));
+  const customer = await getCustomer(id);
   if (!customer) notFound();
 
   const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
@@ -40,7 +40,7 @@ export default async function CustomerDetailPage({
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-2">
         <Card>
           <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">
             Total Events
@@ -55,30 +55,6 @@ export default async function CustomerDetailPage({
           </div>
           <div className="text-xl font-extrabold text-[var(--color-text)]">
             {customer.spending}
-          </div>
-        </Card>
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">
-            Live Events
-          </div>
-          <div className="text-xl font-extrabold text-[var(--color-text)]">
-            1
-          </div>
-        </Card>
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">
-            Recordings
-          </div>
-          <div className="text-xl font-extrabold text-[var(--color-text)]">
-            4
-          </div>
-        </Card>
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">
-            Wallet
-          </div>
-          <div className="text-xl font-extrabold text-[var(--color-text)]">
-            ₹2,400
           </div>
         </Card>
       </div>

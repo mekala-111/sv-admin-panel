@@ -1,0 +1,28 @@
+.waiting {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  background: #f7f4ef;
+  color: #5a4a2e;
+  font-family: system-ui, sans-serif;
+  text-align: center;
+}
+
+.waiting p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.waiting span {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.frame {
+  min-height: 100vh;
+}

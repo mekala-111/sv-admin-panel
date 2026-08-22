@@ -3,30 +3,45 @@ import { Button } from "@/components/ui/Button";
 import { PillTabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlotImage } from "@/components/ui/SlotImage";
-import { listThemes } from "@/lib/db";
+import { listThemeCategories, listThemes } from "@/lib/db";
+import { CreateThemeButton } from "./CreateThemeButton";
+import { ThemeDuplicateButton } from "./ThemeDuplicateButton";
 
-const CATEGORIES = [
-  "All",
-  "Wedding",
-  "Corporate",
-  "Concert",
-  "Spiritual",
-  "Sports",
-  "Birthday",
-  "Private",
-  "Minimal",
-];
+function ThemePreviewImage({ imgId, name }: { imgId: string; name: string }) {
+  const isDirectSrc =
+    imgId.startsWith("/") || imgId.startsWith("data:") || imgId.startsWith("http");
+
+  if (isDirectSrc) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={imgId} alt={name} className="h-[120px] w-full object-cover" />
+    );
+  }
+
+  return (
+    <SlotImage slotId={imgId} label="Theme preview" shape="rect" className="h-[120px] w-full" />
+  );
+}
+
+const FALLBACK_CATEGORIES = ["All", "Wedding", "Corporate", "General", "Traditional"];
 
 export default async function ThemesPage({
   searchParams,
 }: PageProps<"/themes">) {
   const sp = await searchParams;
   const catParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
-  const category = CATEGORIES.includes(catParam ?? "")
-    ? (catParam as string)
-    : "All";
 
-  const themes = listThemes().filter(
+  const [themes, categoriesFromDb] = await Promise.all([listThemes(), listThemeCategories()]);
+  const categoryNames = [
+    "All",
+    ...categoriesFromDb.map((c) => c.name),
+    ...FALLBACK_CATEGORIES.filter((c) => c !== "All" && !categoriesFromDb.some((db) => db.name === c)),
+  ];
+  const uniqueCategories = [...new Set(categoryNames)];
+
+  const category = uniqueCategories.includes(catParam ?? "") ? (catParam as string) : "All";
+
+  const filteredThemes = themes.filter(
     (t) => category === "All" || t.category === category
   );
 
@@ -43,26 +58,19 @@ export default async function ThemesPage({
           <Button href="/themes/assignments" variant="secondary">
             Assignments
           </Button>
-          <Button href="/themes/0/edit" variant="primary">
-            + Create Theme
-          </Button>
+          <CreateThemeButton categories={categoriesFromDb} />
         </div>
       </div>
 
-      <PillTabs basePath="/themes" options={CATEGORIES} current={category} />
+      <PillTabs basePath="/themes" options={uniqueCategories} current={category} />
 
       <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
-        {themes.map((t) => (
+        {filteredThemes.map((t) => (
           <div
             key={t.id}
             className="overflow-hidden rounded-[14px] border border-[var(--color-border)] bg-white"
           >
-            <SlotImage
-              slotId={t.imgId}
-              label="Theme preview"
-              shape="rect"
-              className="h-[120px] w-full"
-            />
+            <ThemePreviewImage imgId={t.imgId} name={t.name} />
             <div className="p-3.5">
               <div className="mb-1 flex items-center justify-between">
                 <div className="text-[14px] font-bold text-[var(--color-text)]">
@@ -71,7 +79,13 @@ export default async function ThemesPage({
                 <StatusBadge status={t.status} />
               </div>
               <div className="mb-3 text-xs text-[var(--color-text-muted)]">
-                {t.category} &middot; Used by {t.vendors} vendors
+                {t.category}
+                {(t as { layout?: string }).layout ? (
+                  <> &middot; {(t as { layout?: string }).layout}</>
+                ) : null}
+                {(t as { fieldCount?: number }).fieldCount ? (
+                  <> &middot; {(t as { fieldCount?: number }).fieldCount} content fields</>
+                ) : null}
               </div>
               <div className="flex gap-2">
                 <Link
@@ -80,9 +94,7 @@ export default async function ThemesPage({
                 >
                   Edit
                 </Link>
-                <button className="flex-1 rounded-[7px] border border-[var(--color-border)] bg-white py-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
-                  Duplicate
-                </button>
+                <ThemeDuplicateButton themeId={String(t.id)} />
               </div>
             </div>
           </div>

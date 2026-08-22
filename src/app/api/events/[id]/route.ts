@@ -6,7 +6,7 @@ export async function GET(
   ctx: RouteContext<"/api/events/[id]">
 ) {
   const { id } = await ctx.params;
-  const event = getEvent(Number(id));
+  const event = await getEvent(id);
   if (!event) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

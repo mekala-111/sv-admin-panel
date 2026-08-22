@@ -13,8 +13,8 @@ const CATEGORY_NAMES = [
   "Minimal",
 ];
 
-export default function ThemeCategoriesPage() {
-  const themes = listThemes();
+export default async function ThemeCategoriesPage() {
+  const themes = await listThemes();
   const categories = CATEGORY_NAMES.map((name) => ({
     name,
     count: themes.filter((t) => t.category === name).length,

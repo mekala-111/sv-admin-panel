@@ -6,7 +6,7 @@ export async function GET(
   ctx: RouteContext<"/api/vendors/[id]">
 ) {
   const { id } = await ctx.params;
-  const vendor = getVendor(Number(id));
+  const vendor = await getVendor(id);
   if (!vendor) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

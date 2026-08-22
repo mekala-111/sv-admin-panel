@@ -1,0 +1,368 @@
+.root {
+  --theme-primary: #e8c36a;
+  --theme-secondary: #1a1208;
+  --theme-accent: #e8c36a;
+  --theme-bg: #0b0908;
+  --theme-text: #f7f1e6;
+  --theme-font: "Cormorant Garamond", Georgia, serif;
+  position: relative;
+  min-height: 100vh;
+  color: var(--theme-text);
+  background: var(--theme-bg);
+  overflow-x: clip;
+  isolation: isolate;
+}
+
+.bgCover {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(18px) saturate(0.85);
+  opacity: 0.18;
+  z-index: -2;
+  transform: scale(1.08);
+}
+
+.bgGlow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--theme-primary) 28%, transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg) 92%, #000) 0%, var(--theme-bg) 55%);
+}
+
+.light .bgCover {
+  opacity: 0.12;
+  filter: blur(22px) saturate(0.7);
+}
+
+.marquee {
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--theme-bg) 70%, #000);
+  white-space: nowrap;
+}
+
+.light .marquee {
+  background: color-mix(in srgb, var(--theme-secondary) 80%, #fff);
+}
+
+.marqueeTrack {
+  display: inline-flex;
+  gap: 4rem;
+  padding: 0.55rem 0;
+  animation: scroll 28s linear infinite;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--theme-primary);
+}
+
+.marqueeTrack span {
+  padding-left: 2rem;
+}
+
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 45%, transparent);
+}
+
+.brandMark {
+  font-family: var(--theme-font);
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  color: var(--theme-primary);
+}
+
+.host {
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--theme-text) 65%, transparent);
+}
+
+.livePill,
+.soonPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.livePill {
+  background: #d12424;
+  color: #fff;
+}
+
+.soonPill {
+  background: color-mix(in srgb, var(--theme-primary) 16%, transparent);
+  color: var(--theme-primary);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 35%, transparent);
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.stage {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 3.5rem;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  color: color-mix(in srgb, var(--theme-primary) 90%, transparent);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--theme-font);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  line-height: 1.05;
+  color: var(--theme-primary);
+  text-wrap: balance;
+}
+
+.floral .title {
+  font-weight: 400;
+  font-size: clamp(2.6rem, 7vw, 4.4rem);
+}
+
+.timing {
+  margin: 0.9rem auto 1.6rem;
+  max-width: 36rem;
+  font-size: 0.95rem;
+  color: color-mix(in srgb, var(--theme-text) 72%, transparent);
+}
+
+.playerShell {
+  position: relative;
+  width: min(100%, 920px);
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 28%, transparent);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  background: #000;
+}
+
+.classic .playerShell,
+.floral .playerShell {
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(30, 20, 40, 0.12);
+}
+
+.player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.coverOnly {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  place-items: center;
+}
+
+.posterShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.58));
+}
+
+.watchBtn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  padding: 0.9rem 1.4rem;
+  border-radius: 999px;
+  background: var(--theme-primary);
+  color: var(--theme-secondary);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.light .watchBtn {
+  color: #fff;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.35rem;
+}
+
+.primaryBtn,
+.secondaryBtn {
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.primaryBtn {
+  background: var(--theme-primary);
+  color: var(--theme-secondary);
+  border: none;
+}
+
+.light .primaryBtn {
+  color: #fff;
+}
+
+.secondaryBtn {
+  background: transparent;
+  color: var(--theme-text);
+  border-color: color-mix(in srgb, var(--theme-text) 28%, transparent);
+}
+
+.notes {
+  margin: 1.75rem auto 0;
+  max-width: 40rem;
+  color: color-mix(in srgb, var(--theme-text) 72%, transparent);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.notes p {
+  margin: 0 0 0.6rem;
+}
+
+.gallery {
+  margin-top: 2.5rem;
+  text-align: left;
+}
+
+.gallery h2 {
+  margin: 0 0 1rem;
+  font-family: var(--theme-font);
+  font-size: 1.5rem;
+  color: var(--theme-primary);
+  text-align: center;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.galleryGrid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, transparent);
+}
+
+.footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--theme-text) 42%, transparent);
+}
+
+.traditional .stage {
+  border-top: 1px solid color-mix(in srgb, var(--theme-accent) 35%, transparent);
+  padding-top: 1.5rem;
+}
+
+.classic .title {
+  color: var(--theme-text);
+}
+
+.classic .eyebrow {
+  color: var(--theme-primary);
+}
+
+@media (max-width: 720px) {
+  .galleryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topBar {
+    padding: 0.9rem 1rem;
+  }
+
+  .stage {
+    padding: 0.5rem 1rem 2.5rem;
+  }
+}

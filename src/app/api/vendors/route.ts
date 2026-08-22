@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createVendor, listVendors } from "@/lib/db";
 
 export async function GET() {
-  return NextResponse.json(listVendors());
+  return NextResponse.json(await listVendors());
 }
 
 export async function POST(request: Request) {
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const vendor = createVendor({
+  const vendor = await createVendor({
     name: body.name,
     company: body.company,
     email: body.email,

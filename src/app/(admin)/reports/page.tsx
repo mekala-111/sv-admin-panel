@@ -5,12 +5,13 @@ import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
 import {
   listEvents,
   listRecordings,
-  listServers,
+  listEventStreams,
   listTransactions,
   listVendors,
   listCustomers,
   listWalletTx,
 } from "@/lib/db";
+import { EmptyState } from "@/components/ui/Table";
 
 const REPORT_TYPES = [
   "Revenue",
@@ -70,9 +71,9 @@ export default async function ReportsPage({
   );
 }
 
-function ReportTable({ type }: { type: string }) {
+async function ReportTable({ type }: { type: string }) {
   if (type === "Revenue" || type === "Payment") {
-    const rows = listTransactions();
+    const rows = await listTransactions();
     return (
       <TableCard>
         {type === "Revenue" ? (
@@ -106,7 +107,7 @@ function ReportTable({ type }: { type: string }) {
   }
 
   if (type === "Vendor") {
-    const rows = listVendors();
+    const rows = await listVendors();
     return (
       <TableCard>
         <Thead columns={["VENDOR", "EVENTS", "CUSTOMERS", "REVENUE", "STATUS"]} />
@@ -128,7 +129,7 @@ function ReportTable({ type }: { type: string }) {
   }
 
   if (type === "Customer") {
-    const rows = listCustomers();
+    const rows = await listCustomers();
     return (
       <TableCard>
         <Thead columns={["CUSTOMER", "VENDOR", "EVENTS", "SPENDING"]} />
@@ -147,7 +148,7 @@ function ReportTable({ type }: { type: string }) {
   }
 
   if (type === "Event") {
-    const rows = listEvents();
+    const rows = await listEvents();
     return (
       <TableCard>
         <Thead columns={["EVENT", "VENDOR", "VIEWERS", "REVENUE", "STATUS"]} />
@@ -169,22 +170,23 @@ function ReportTable({ type }: { type: string }) {
   }
 
   if (type === "Streaming") {
-    const rows = listServers();
-    return (
+    const rows = await listEventStreams();
+    return rows.length === 0 ? (
+      <EmptyState message="No YouTube streams yet." />
+    ) : (
       <TableCard>
-        <Thead columns={["SERVER", "LOCATION", "CPU", "RAM", "STATUS"]} />
+        <Thead columns={["EVENT", "VIDEO ID", "STATUS", "DATE"]} />
         <tbody>
           {rows.map((s) => (
-            <Tr key={s.name}>
-              <Td strong>{s.name}</Td>
-              <Td muted>{s.location}</Td>
-              <Td>{s.cpu}%</Td>
-              <Td>{s.ram}%</Td>
-              <Td>
-                <span className="font-semibold text-[var(--color-success)]">
-                  {s.status}
-                </span>
+            <Tr key={String(s.id)}>
+              <Td strong>{s.event}</Td>
+              <Td mono muted>
+                {s.videoId}
               </Td>
+              <Td>
+                <StatusBadge status={s.status} />
+              </Td>
+              <Td muted>{s.date}</Td>
             </Tr>
           ))}
         </tbody>
@@ -193,7 +195,7 @@ function ReportTable({ type }: { type: string }) {
   }
 
   if (type === "Wallet") {
-    const rows = listWalletTx();
+    const rows = await listWalletTx();
     return (
       <TableCard>
         <Thead columns={["TYPE", "VENDOR", "AMOUNT", "DATE"]} />
@@ -212,7 +214,7 @@ function ReportTable({ type }: { type: string }) {
   }
 
   // Storage
-  const rows = listRecordings();
+  const rows = await listRecordings();
   return (
     <TableCard>
       <Thead columns={["EVENT", "VENDOR", "FILE SIZE", "SERVER"]} />

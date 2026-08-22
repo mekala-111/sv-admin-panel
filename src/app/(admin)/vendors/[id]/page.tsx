@@ -6,6 +6,7 @@ import { SlotImage } from "@/components/ui/SlotImage";
 import { Tabs } from "@/components/ui/Tabs";
 import { TableCard, Thead, Tr, Td, EmptyState } from "@/components/ui/Table";
 import { getVendor, listEventsByVendor } from "@/lib/db";
+import { activateVendorAction, suspendVendorAction } from "@/lib/actions";
 
 const TABS = [
   "Overview",
@@ -25,12 +26,14 @@ export default async function VendorDetailPage({
 }: PageProps<"/vendors/[id]">) {
   const { id } = await params;
   const sp = await searchParams;
-  const vendor = getVendor(Number(id));
+  const vendor = await getVendor(id);
   if (!vendor) notFound();
 
   const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
   const tab = TABS.includes(tabParam ?? "") ? (tabParam as string) : "Overview";
   const basePath = `/vendors/${id}`;
+  const vendorEvents = tab === "Events" ? await listEventsByVendor(vendor.name) : [];
+  const isSuspended = vendor.status === "Suspended";
 
   return (
     <div>
@@ -57,9 +60,30 @@ export default async function VendorDetailPage({
           </div>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <Button variant="secondary">Edit</Button>
-          <Button variant="danger">Suspend</Button>
-          <Button variant="primary">Login as Vendor</Button>
+          <Button variant="secondary" href={`/vendors/${id}/edit`}>
+            Edit
+          </Button>
+          {isSuspended ? (
+            <form action={activateVendorAction}>
+              <input type="hidden" name="id" value={String(vendor.id)} />
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center gap-2 rounded-[9px] border-none bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-bold text-white"
+              >
+                Activate
+              </button>
+            </form>
+          ) : (
+            <form action={suspendVendorAction}>
+              <input type="hidden" name="id" value={String(vendor.id)} />
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center gap-2 rounded-[9px] border border-[var(--color-border)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--color-danger)]"
+              >
+                Suspend
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
@@ -101,37 +125,65 @@ export default async function VendorDetailPage({
               </div>
             </Card>
           </div>
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Card>
+              <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">
+                Live event creation fee
+              </div>
+              <div className="text-[22px] font-extrabold text-[var(--color-text)]">
+                ₹{Number(vendor.liveEventCreationFee ?? vendor.eventCreationFee ?? 0).toLocaleString("en-IN")}
+              </div>
+              <div className="mt-1 text-[12px] text-[var(--color-text-muted)]">
+                Charged when this vendor creates a live event
+              </div>
+            </Card>
+            <Card>
+              <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">
+                Invitation creation fee
+              </div>
+              <div className="text-[22px] font-extrabold text-[var(--color-text)]">
+                ₹{Number(vendor.invitationCreationFee ?? vendor.eventCreationFee ?? 0).toLocaleString("en-IN")}
+              </div>
+              <div className="mt-1 text-[12px] text-[var(--color-text-muted)]">
+                Charged when this vendor creates an invitation
+              </div>
+            </Card>
+          </div>
           <Card>
             <CardTitle>Vendor Information</CardTitle>
             <div className="grid grid-cols-1 gap-3.5 text-[13px] sm:grid-cols-2">
               <div>
-                <span className="text-[var(--color-text-muted)]">
-                  Company:{" "}
-                </span>
+                <span className="text-[var(--color-text-muted)]">Company: </span>
                 <span className="font-semibold text-[var(--color-text)]">
                   {vendor.company}
                 </span>
               </div>
               <div>
-                <span className="text-[var(--color-text-muted)]">
-                  Email:{" "}
-                </span>
+                <span className="text-[var(--color-text-muted)]">Email: </span>
                 <span className="font-semibold text-[var(--color-text)]">
                   {vendor.email}
                 </span>
               </div>
               <div>
-                <span className="text-[var(--color-text-muted)]">
-                  Created:{" "}
+                <span className="text-[var(--color-text-muted)]">Phone: </span>
+                <span className="font-semibold text-[var(--color-text)]">
+                  {vendor.phone || "—"}
                 </span>
+              </div>
+              <div>
+                <span className="text-[var(--color-text-muted)]">Address: </span>
+                <span className="font-semibold text-[var(--color-text)]">
+                  {vendor.address || "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[var(--color-text-muted)]">Created: </span>
                 <span className="font-semibold text-[var(--color-text)]">
                   {vendor.created}
                 </span>
               </div>
               <div>
-                <span className="text-[var(--color-text-muted)]">
-                  Status:{" "}
-                </span>
+                <span className="text-[var(--color-text-muted)]">Status: </span>
                 <span className="font-semibold text-[var(--color-text)]">
                   {vendor.status}
                 </span>
@@ -145,7 +197,7 @@ export default async function VendorDetailPage({
         <TableCard>
           <Thead columns={["EVENT", "CUSTOMER", "DATE", "VIEWERS", "STATUS"]} />
           <tbody>
-            {listEventsByVendor(vendor.name).map((ev) => (
+            {vendorEvents.map((ev) => (
               <Tr key={ev.id}>
                 <Td strong>{ev.name}</Td>
                 <Td muted>{ev.customer}</Td>

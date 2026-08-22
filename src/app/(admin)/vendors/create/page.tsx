@@ -69,29 +69,39 @@ export default function CreateVendorPage() {
         </Card>
 
         <Card>
-          <CardTitle>Platform</CardTitle>
+          <CardTitle>Event pricing &amp; wallet</CardTitle>
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <TextField
+              label="Live event creation fee (₹)"
+              name="liveEventCreationFee"
+              type="number"
+              placeholder="e.g. 999"
+              defaultValue="0"
+            />
+            <TextField
+              label="Invitation creation fee (₹)"
+              name="invitationCreationFee"
+              type="number"
+              placeholder="e.g. 499"
+              defaultValue="0"
+            />
+            <TextField
+              label="Initial wallet credit (₹)"
+              name="initialWalletCredit"
+              type="number"
+              placeholder="e.g. 1000"
+              defaultValue="0"
+            />
             <SelectField
               label="Pricing Plan"
               name="plan"
               options={["Starter", "Professional", "Enterprise"]}
             />
-            <TextField
-              label="Wallet Limit"
-              name="walletLimit"
-              placeholder="₹0.00"
-            />
-            <TextField
-              label="Event Limit"
-              name="eventLimit"
-              placeholder="Unlimited"
-            />
-            <TextField
-              label="Storage Limit"
-              name="storageLimit"
-              placeholder="500 GB"
-            />
           </div>
+          <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
+            Vendor pays the live event fee when creating a live stream event, and the invitation
+            fee when creating a digital invitation. Fees are credited to the admin platform wallet.
+          </p>
         </Card>
 
         <Card>

@@ -8,12 +8,12 @@ export default async function ChannelDetailPage({
   params,
 }: PageProps<"/youtube/channels/[id]">) {
   const { id } = await params;
-  const channel = getChannel(Number(id));
+  const channel = await getChannel(id);
   if (!channel) notFound();
 
   return (
     <div>
-      <BackLink href="/youtube" label="Back to YouTube" />
+      <BackLink href="/youtube?tab=Channels" label="Back to YouTube" />
       <div className="mb-5 flex flex-wrap items-center gap-2.5">
         <div className="text-2xl font-extrabold text-[var(--color-text)]">
           {channel.name}
@@ -57,14 +57,16 @@ export default async function ChannelDetailPage({
             <span className="text-[var(--color-text-muted)]">
               Live Events:{" "}
             </span>
-            <span className="font-semibold text-[var(--color-text)]">0</span>
+            <span className="font-semibold text-[var(--color-text)]">
+              {channel.liveStreams}
+            </span>
           </div>
           <div>
             <span className="text-[var(--color-text-muted)]">
               Last Sync:{" "}
             </span>
             <span className="font-semibold text-[var(--color-text)]">
-              5 minutes ago
+              {channel.lastSync}
             </span>
           </div>
         </div>

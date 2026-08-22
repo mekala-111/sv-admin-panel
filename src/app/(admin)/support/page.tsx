@@ -3,8 +3,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
 import { listTickets } from "@/lib/db";
 
-export default function SupportPage() {
-  const tickets = listTickets();
+export default async function SupportPage() {
+  const tickets = await listTickets();
   const counts = {
     Open: tickets.filter((t) => t.status === "Open").length,
     Pending: tickets.filter((t) => t.status === "Pending").length,

@@ -1,0 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Peddana&family=Ramabhadra&display=swap");
+
+:root {
+  --ts-ivory: #fbf6ec;
+  --ts-gold: #b8860a;
+  --ts-gold-light: #d8b25c;
+  --ts-maroon: #7a1626;
+  --ts-maroon-deep: #3e0d12;
+  --ts-ink: #5a4a2e;
+  --ts-font-te: "Peddana", "Ramabhadra", serif;
+  --ts-font-serif: "Cormorant Garamond", Georgia, serif;
+}

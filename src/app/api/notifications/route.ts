@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createNotification, listNotifications } from "@/lib/db";
 
 export async function GET() {
-  return NextResponse.json(listNotifications());
+  return NextResponse.json(await listNotifications());
 }
 
 export async function POST(request: Request) {
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const notification = createNotification({
+  const notification = await createNotification({
     title: body.title,
     message: body.message,
     audience: body.audience ?? "All Vendors",

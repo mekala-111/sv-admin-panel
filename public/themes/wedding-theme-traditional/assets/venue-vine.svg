@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" fill="none">
+  <path d="M18 12c22 18 38 48 44 86 6 40 2 72-18 118" stroke="#b08a3e" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M62 98c28 8 54 6 92-10 26-12 48-18 78-16" stroke="#c4a05a" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M48 150c18 22 22 48 14 86" stroke="#9a7530" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M40 70c-16 6-28 4-36-8 12 2 22-6 28-18 2 14 10 22 8 26Z" fill="#c4a35c" opacity=".85"/>
+  <path d="M70 120c-14 10-18 24-10 36 8-12 22-16 34-10-8-12-12-24-24-26Z" fill="#b08a3e" opacity=".8"/>
+  <path d="M96 88c10-16 28-22 40-12-16 4-24 16-22 28-10-4-18-8-18-16Z" fill="#c9ab62"/>
+  <path d="M36 188c-12 12-12 28 2 36 8-14 22-16 34-8-10-14-22-24-36-28Z" fill="#a67c32" opacity=".85"/>
+  <g transform="translate(78 42)">
+    <ellipse cx="0" cy="0" rx="16" ry="16" fill="#f3c9c4"/>
+    <ellipse cx="-11" cy="6" rx="11" ry="12" fill="#e8a39a"/>
+    <ellipse cx="11" cy="6" rx="11" ry="12" fill="#e59a90"/>
+    <ellipse cx="-6" cy="-10" rx="10" ry="11" fill="#f0b7ae"/>
+    <ellipse cx="7" cy="-9" rx="10" ry="11" fill="#ebb0a8"/>
+    <circle cx="0" cy="1" r="5" fill="#d4a04a"/>
+  </g>
+  <g transform="translate(148 78) rotate(18)">
+    <ellipse cx="0" cy="0" rx="13" ry="13" fill="#f6d2cc"/>
+    <ellipse cx="-9" cy="5" rx="9" ry="10" fill="#e8a8a0"/>
+    <ellipse cx="9" cy="5" rx="9" ry="10" fill="#e2978e"/>
+    <ellipse cx="-5" cy="-8" rx="8" ry="9" fill="#f0bdb6"/>
+    <circle cx="0" cy="1" r="4" fill="#d8b25c"/>
+  </g>
+  <g transform="translate(52 128) rotate(-20)">
+    <ellipse cx="0" cy="0" rx="11" ry="11" fill="#efc2bc"/>
+    <ellipse cx="-8" cy="4" rx="8" ry="9" fill="#d98880"/>
+    <ellipse cx="8" cy="4" rx="8" ry="9" fill="#e09a92"/>
+    <circle cx="0" cy="1" r="3.4" fill="#c9a227"/>
+  </g>
+  <g transform="translate(28 210) rotate(12)">
+    <ellipse cx="0" cy="0" rx="10" ry="10" fill="#f0c8c2"/>
+    <ellipse cx="-7" cy="4" rx="7" ry="8" fill="#d17a72"/>
+    <ellipse cx="7" cy="4" rx="7" ry="8" fill="#e0948c"/>
+    <circle cx="0" cy="1" r="3" fill="#d8b25c"/>
+  </g>
+  <circle cx="118" cy="58" r="3.5" fill="#e8a39a"/>
+  <circle cx="168" cy="108" r="3" fill="#d98880"/>
+  <circle cx="64" cy="168" r="2.8" fill="#c45c5c"/>
+</svg>

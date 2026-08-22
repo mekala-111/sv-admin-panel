@@ -23,7 +23,7 @@ export default async function EventDetailPage({
 }: PageProps<"/events/[id]">) {
   const { id } = await params;
   const sp = await searchParams;
-  const event = getEvent(Number(id));
+  const event = await getEvent(id);
   if (!event) notFound();
 
   const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;

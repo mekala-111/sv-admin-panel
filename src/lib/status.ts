@@ -14,6 +14,7 @@ const STATUS_MAP: Record<string, StatusMeta> = {
   Cancelled: { bg: "#FDEAEA", fg: "#DC2626" },
   Rejected: { bg: "#FDEAEA", fg: "#DC2626" },
   Refunded: { bg: "#F0EEEA", fg: "#707070" },
+  Error: { bg: "#FDEAEA", fg: "#DC2626" },
   Upcoming: { bg: "#EAF0FE", fg: "#2563EB" },
   Successful: { bg: "#EAF7EE", fg: "#16A34A" },
   Open: { bg: "#FDEAEA", fg: "#DC2626" },

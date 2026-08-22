@@ -1,8 +1,8 @@
 import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
 import { listAuditLogs } from "@/lib/db";
 
-export default function AuditLogsPage() {
-  const logs = listAuditLogs();
+export default async function AuditLogsPage() {
+  const logs = await listAuditLogs();
 
   return (
     <div>

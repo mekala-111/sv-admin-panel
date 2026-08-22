@@ -6,8 +6,8 @@ import { SearchIcon } from "@/components/ui/Icons";
 import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
 import { listVendors } from "@/lib/db";
 
-export default function VendorsPage() {
-  const vendors = listVendors();
+export default async function VendorsPage() {
+  const vendors = await listVendors();
 
   return (
     <div>

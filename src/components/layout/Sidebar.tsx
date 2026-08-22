@@ -139,7 +139,6 @@ const SECTIONS: Section[] = [
         href: "/notifications",
         icon: NotificationsIcon,
         match: (p) => p.startsWith("/notifications"),
-        badge: "12",
       },
       {
         label: "Support Tickets",

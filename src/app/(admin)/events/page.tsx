@@ -13,7 +13,9 @@ export default async function EventsPage({
   const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
   const tab = FILTERS.includes(tabParam ?? "") ? (tabParam as string) : "All";
 
-  const events = listEvents().filter((e) => tab === "All" || e.status === tab);
+  const events = (await listEvents()).filter(
+    (e) => tab === "All" || e.status === tab
+  );
 
   return (
     <div>
