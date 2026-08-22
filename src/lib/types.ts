@@ -121,6 +121,9 @@ export type Theme = {
   layout?: string;
   fontFamily?: string;
   colors?: Record<string, string>;
+  previewImage?: string | null;
+  categoryId?: string | null;
+  config?: import("@/themes/theme-templates").ThemeConfig | null;
   _id?: string;
 };
 

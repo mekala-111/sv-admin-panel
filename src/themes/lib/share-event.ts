@@ -1,5 +1,5 @@
 /** Resolve a fetchable absolute URL for share image assets. */
-export function absoluteShareImageUrl(url) {
+export function absoluteShareImageUrl(url: unknown) {
   if (!url || typeof url !== "string") return null;
   if (/^(https?:|data:|blob:)/i.test(url)) return url;
   if (typeof window === "undefined") return url;
@@ -7,7 +7,15 @@ export function absoluteShareImageUrl(url) {
 }
 
 /** Pick the best image to attach when sharing an event. */
-export function resolveEventShareImageUrl(event, fallbackUrl = null) {
+export function resolveEventShareImageUrl(
+  event?: {
+    whatsappImage?: string;
+    coverImage?: string;
+    invitationCard?: string;
+    customImage?: string;
+  } | null,
+  fallbackUrl: string | null = null,
+) {
   const candidate =
     event?.whatsappImage ||
     event?.coverImage ||
@@ -25,6 +33,14 @@ export function buildEventShareText({
   dateLine,
   timeLine,
   placeLine,
+}: {
+  url: string;
+  title?: string;
+  coupleLine?: string;
+  tagline?: string;
+  dateLine?: string;
+  timeLine?: string;
+  placeLine?: string;
 }) {
   const lines = [
     url,
@@ -51,6 +67,12 @@ export async function shareEventWithImage({
   imageUrl,
   title,
   fileName = "event-invite.png",
+}: {
+  url: string;
+  text?: string;
+  imageUrl?: string | null;
+  title?: string;
+  fileName?: string;
 }) {
   const message = text || url;
   const openWhatsApp = () => {
@@ -72,7 +94,7 @@ export async function shareEventWithImage({
         }
       }
     } catch (err) {
-      if (err?.name === "AbortError") return;
+      if (err instanceof Error && err.name === "AbortError") return;
     }
   }
 
@@ -81,7 +103,7 @@ export async function shareEventWithImage({
       await navigator.share({ text: message, url, title: title || undefined });
       return;
     } catch (err) {
-      if (err?.name === "AbortError") return;
+      if (err instanceof Error && err.name === "AbortError") return;
     }
   }
 
