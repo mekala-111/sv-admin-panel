@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { adminAbsoluteUrl } from "@/lib/admin-origin";
+import { attachRefreshedSessionCookies } from "@/lib/session-cookies";
 
 const PUBLIC = ["/login"];
+const ADMIN_BASE =
+  process.env.NEXT_PUBLIC_ADMIN_BASE_URL || process.env.ADMIN_BASE_URL || "";
 
 /** Guest pages load CSS/images from /public/themes/{slug}/ — must not require admin login. */
 function isPublicThemeAsset(pathname: string): boolean {
@@ -19,8 +22,10 @@ function isPublicThemeAsset(pathname: string): boolean {
   return /\.(css|svg|png|jpe?g|webp|gif|mp3|woff2?|ttf|ico|js)$/i.test(pathname);
 }
 
-export function proxy(request: NextRequest) {
-  const authed = request.cookies.has("sv_admin_access");
+export async function proxy(request: NextRequest) {
+  const access = request.cookies.get("sv_admin_access")?.value;
+  const refresh = request.cookies.get("sv_admin_refresh")?.value;
+  const authed = Boolean(access || refresh);
   const { pathname } = request.nextUrl;
 
   if (pathname === "/") {
@@ -39,7 +44,16 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(adminAbsoluteUrl("/dashboard", request));
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  if (refresh) {
+    return attachRefreshedSessionCookies(
+      request,
+      res,
+      { access: "sv_admin_access", refresh: "sv_admin_refresh" },
+      ADMIN_BASE
+    );
+  }
+  return res;
 }
 
 export const config = {

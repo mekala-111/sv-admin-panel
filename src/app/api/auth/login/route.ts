@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiLogin, AUTH_COOKIE, REFRESH_COOKIE, USER_COOKIE } from "@/lib/api";
 import { adminAbsoluteUrl } from "@/lib/admin-origin";
+import { cookieSecureFlag } from "@/lib/session-cookies";
+
+const ADMIN_BASE = process.env.NEXT_PUBLIC_ADMIN_BASE_URL || process.env.ADMIN_BASE_URL || "";
 
 function loginRedirect(req: NextRequest, query: string) {
   return NextResponse.redirect(adminAbsoluteUrl(`/login?${query}`, req), 303);
@@ -21,12 +24,13 @@ export async function POST(req: NextRequest) {
     }
 
     const res = NextResponse.redirect(adminAbsoluteUrl("/dashboard", req), 303);
+    const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
     const cookieOpts = {
       httpOnly: true,
       sameSite: "lax" as const,
       path: "/",
-      secure: process.env.NODE_ENV === "production",
-      ...(remember ? { maxAge: 60 * 60 * 24 * 30 } : {}),
+      secure: cookieSecureFlag(ADMIN_BASE),
+      maxAge,
     };
     res.cookies.set(AUTH_COOKIE, data.accessToken, cookieOpts);
     res.cookies.set(REFRESH_COOKIE, data.refreshToken, cookieOpts);
