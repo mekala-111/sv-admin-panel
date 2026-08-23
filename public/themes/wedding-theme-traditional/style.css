@@ -1453,7 +1453,6 @@ a {
   flex: 1 1 0;
   min-width: 0;
   aspect-ratio: 3 / 4;
-  min-height: 230px;
   border-radius: 110px 110px 8px 8px;
   overflow: hidden;
   border: 2.5px solid #c4a05a;
@@ -1706,7 +1705,6 @@ a {
     padding: 24px 12px 22px;
   }
   .hosts-frame {
-    min-height: 260px;
     border-radius: 120px 120px 8px 8px;
   }
 }
