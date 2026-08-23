@@ -23,6 +23,4 @@ export function realImageFor(slotId: string): string | null {
   return REAL_IMAGES[slotId] ?? null;
 }
 
-export const realImageFor = realImageFor;
 export const svLiveLogo = "/images/sv-live-logo.png";
-export const svLiveLogo = svLiveLogo;

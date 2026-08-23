@@ -190,6 +190,3 @@ export function buildThemePreviewPayload(opts: {
 export function fieldKeysForPreview(fields: ThemeFieldDef[]): ThemeFieldDef[] {
   return fields.filter((f) => f.type !== "gallery" && f.type !== "subEvents");
 }
-
-export const defaultSampleForTemplate = defaultSampleForTemplate;
-export const buildThemePreviewPayload = buildThemePreviewPayload;
