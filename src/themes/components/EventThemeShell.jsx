@@ -49,6 +49,7 @@ export default function EventThemeShell({
     event?.fontFamily || theme?.config?.fontFamily || branding?.customConfig?.fontFamily || colors.fontFamily;
   const accent = event?.fontColor || branding?.primaryColor || colors.primary;
   const cover = coverSrc(event?.coverImage);
+  const pageBg = theme?.config?.backgroundImage || cover;
   const logo = branding?.logo || event?.logoImage;
   const shareUrl =
     typeof window !== "undefined" ? window.location.href : publicPath || "";
@@ -92,7 +93,7 @@ export default function EventThemeShell({
       }}
     >
       <div className={styles.bgGlow} aria-hidden />
-      <div className={styles.bgCover} style={{ backgroundImage: `url(${cover})` }} aria-hidden />
+      <div className={styles.bgCover} style={{ backgroundImage: pageBg ? `url(${pageBg})` : undefined }} aria-hidden />
 
       {event?.scrollMessage ? (
         <div className={styles.marquee}>

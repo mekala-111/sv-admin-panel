@@ -13,15 +13,19 @@ export default function CinematicLiveTheme({
   youtube,
   media = [],
   branding,
+  theme,
   publicPath,
 }) {
   const [watching, setWatching] = useState(true);
   const embed = useMemo(() => youtubeEmbedUrl(youtube), [youtube]);
   const isLive = event?.status === "LIVE" || youtube?.status === "LIVE";
   const title = event?.pageTitle || event?.eventName || "Live Event";
-  const fontFamily = event?.fontFamily || "Cormorant Garamond, Georgia, serif";
-  const accent = event?.fontColor || branding?.primaryColor || "#E8C36A";
+  const fontFamily =
+    event?.fontFamily || theme?.config?.fontFamily || "Cormorant Garamond, Georgia, serif";
+  const accent =
+    event?.fontColor || branding?.primaryColor || theme?.config?.colors?.primary || "#E8C36A";
   const cover = coverSrc(event?.coverImage);
+  const pageBg = theme?.config?.backgroundImage || cover;
   const logo = branding?.logo || event?.logoImage;
   const shareUrl =
     typeof window !== "undefined"
@@ -41,7 +45,7 @@ export default function CinematicLiveTheme({
       <div className={styles.bgGlow} aria-hidden />
       <div
         className={styles.bgCover}
-        style={{ backgroundImage: `url(${cover})` }}
+        style={{ backgroundImage: pageBg ? `url(${pageBg})` : undefined }}
         aria-hidden
       />
 

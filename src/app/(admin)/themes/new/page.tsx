@@ -19,7 +19,7 @@ export default async function CreateThemePage({
       </Link>
       <h1 className="mb-2 text-[22px] font-extrabold text-[var(--color-text)]">Create Theme</h1>
       <p className="mb-5 text-[13.5px] text-[var(--color-text-muted)]">
-        Name your theme, pick a template, and preview the full page before saving.
+        Name the theme, pick a design, set background and fields, then save. Vendors cannot create themes — they only receive what you assign.
       </p>
 
       <ThemeForm mode="create" error={error} categories={categories} />

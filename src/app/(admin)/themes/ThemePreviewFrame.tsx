@@ -61,3 +61,5 @@ export function ThemePreviewFrame({
     </div>
   );
 }
+
+export const ThemePreviewFrame = ThemePreviewFrame;

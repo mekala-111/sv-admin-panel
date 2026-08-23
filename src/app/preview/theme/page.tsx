@@ -52,7 +52,7 @@ export default function ThemePreviewPage() {
     <>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Peddana&family=Playfair+Display:wght@500;600;700&family=Ramabhadra&family=Poppins:wght@300;400;500;600&family=Great+Vibes&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Dancing+Script&family=Great+Vibes&family=Josefin+Sans:wght@400;600&family=Lobster&family=Lora:wght@500;600&family=Oswald:wght@500&family=Pacifico&family=Peddana&family=Pinyon+Script&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600&family=Ramabhadra&family=Tangerine:wght@400;700&display=swap"
       />
       <div className={styles.frame}>
         <EventThemeRenderer

@@ -1,6 +1,7 @@
 "use client";
 
 import CinematicLiveTheme from "./CinematicLiveTheme";
+import CustomThemeBlocks from "./CustomThemeBlocks";
 import EventThemeShell from "./EventThemeShell";
 import SacredGardenTheme from "./SacredGardenTheme";
 import TraditionalStreamingTheme from "./TraditionalStreamingTheme";
@@ -53,5 +54,10 @@ function resolveLayoutKey(theme) {
 export default function EventThemeRenderer(props) {
   const layout = resolveLayoutKey(props.theme);
   const Component = resolveLayoutRenderer(layout);
-  return <Component {...props} />;
+  return (
+    <>
+      <Component {...props} />
+      <CustomThemeBlocks {...props} />
+    </>
+  );
 }

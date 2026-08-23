@@ -1,4 +1,9 @@
-import type { ThemeConfig, ThemeFieldDef, ThemeSections } from "@/themes/theme-templates";
+import type {
+  ThemeConfig,
+  ThemeCustomSection,
+  ThemeFieldDef,
+  ThemeSections,
+} from "@/themes/theme-templates";
 import {
   getThemeTemplate,
   resolveThemeFields,
@@ -57,7 +62,11 @@ export function mergeThemeConfig(
     colors?: Partial<ThemeConfig["colors"]>;
     fontFamily?: string;
     sections?: Partial<ThemeSections>;
+    sectionOrder?: ThemeConfig["sectionOrder"];
     defaults?: Record<string, string>;
+    fields?: ThemeFieldDef[];
+    customSections?: ThemeCustomSection[];
+    backgroundImage?: string;
   }
 ): ThemeConfig {
   const template = getThemeTemplate(templateId) ?? THEME_TEMPLATES[0];
@@ -67,8 +76,11 @@ export function mergeThemeConfig(
     colors: { ...base.colors, ...(overrides.colors ?? {}) },
     fontFamily: overrides.fontFamily?.trim() || base.fontFamily,
     sections: { ...base.sections, ...(overrides.sections ?? {}) },
+    sectionOrder: overrides.sectionOrder ?? base.sectionOrder,
     defaults: { ...(base.defaults ?? {}), ...(overrides.defaults ?? {}) },
-    fields: base.fields,
+    fields: overrides.fields ?? base.fields,
+    customSections: overrides.customSections ?? base.customSections ?? [],
+    backgroundImage: overrides.backgroundImage ?? base.backgroundImage,
     layout: base.layout,
   };
 }
@@ -88,6 +100,8 @@ export function configFromStored(
     sections: { ...template.config.sections, ...(stored.sections ?? {}) },
     defaults: { ...(template.config.defaults ?? {}), ...(stored.defaults ?? {}) },
     fields: stored.fields?.length ? stored.fields : template.config.fields,
+    customSections: stored.customSections ?? template.config.customSections ?? [],
+    backgroundImage: stored.backgroundImage ?? template.config.backgroundImage,
   };
 }
 
@@ -113,6 +127,7 @@ export function buildThemePreviewPayload(opts: {
       : [];
 
   const event = {
+    ...sample,
     eventName: String(sample.pageTitle || themeName || "Preview Event"),
     pageTitle: String(sample.pageTitle || themeName || "Preview Event"),
     eventType: config.layout.includes("wedding") ? "Wedding" : "Live Event",
@@ -125,6 +140,8 @@ export function buildThemePreviewPayload(opts: {
     remarks1: sample.remarks1 ?? config.defaults?.remarks1 ?? null,
     remarks2: sample.remarks2 ?? null,
     scrollMessage: sample.scrollMessage ?? config.defaults?.scrollMessage ?? null,
+    fontFamily: config.fontFamily,
+    fontColor: config.colors.text,
     brideName: sample.brideName ?? null,
     groomName: sample.groomName ?? null,
     brideImage: sample.brideImage ?? previewImage ?? null,
@@ -173,3 +190,6 @@ export function buildThemePreviewPayload(opts: {
 export function fieldKeysForPreview(fields: ThemeFieldDef[]): ThemeFieldDef[] {
   return fields.filter((f) => f.type !== "gallery" && f.type !== "subEvents");
 }
+
+export const defaultSampleForTemplate = defaultSampleForTemplate;
+export const buildThemePreviewPayload = buildThemePreviewPayload;

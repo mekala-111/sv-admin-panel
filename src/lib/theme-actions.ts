@@ -29,10 +29,13 @@ function parseConfigFromForm(formData: FormData, templateId: string): ThemeConfi
     return {
       ...fallback,
       ...parsed,
+      fontFamily: parsed.fontFamily || fallback.fontFamily,
       colors: { ...fallback.colors, ...(parsed.colors ?? {}) },
       sections: { ...fallback.sections, ...(parsed.sections ?? {}) },
       defaults: { ...(fallback.defaults ?? {}), ...(parsed.defaults ?? {}) },
       fields: parsed.fields?.length ? parsed.fields : fallback.fields,
+      customSections: parsed.customSections ?? fallback.customSections ?? [],
+      backgroundImage: parsed.backgroundImage ?? fallback.backgroundImage,
       layout: parsed.layout || fallback.layout,
     };
   } catch {
@@ -45,7 +48,6 @@ export async function createThemeAction(formData: FormData) {
   const templateId = String(formData.get("template") ?? "wedding-theme-traditional").trim();
   const previewImageInput = String(formData.get("previewImage") ?? "").trim();
   const categoryId = String(formData.get("categoryId") ?? "").trim() || undefined;
-  const assignToAllVendors = formData.has("assignToAllVendors");
 
   const template = getThemeTemplate(templateId);
   if (!template || name.length < 2) redirect("/themes/new?error=1");
@@ -61,7 +63,7 @@ export async function createThemeAction(formData: FormData) {
         previewImage: previewImageInput || template.previewImage,
         status: "ACTIVE",
         config,
-        assignToAllVendors,
+        assignToAllVendors: true,
       }),
     });
     redirect(`/themes/${data.id}/edit?created=1`);

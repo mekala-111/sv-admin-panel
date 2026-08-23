@@ -26,6 +26,12 @@ export type ThemeSections = {
   showCouplePhotos: boolean;
 };
 
+export type ThemeCustomSection = {
+  id: string;
+  title: string;
+  fieldKey: string;
+};
+
 export type ThemeConfig = {
   layout: string;
   colors: {
@@ -37,7 +43,10 @@ export type ThemeConfig = {
   };
   fontFamily: string;
   assetPath?: string;
+  backgroundImage?: string;
   sections: ThemeSections;
+  sectionOrder?: (keyof ThemeSections)[];
+  customSections?: ThemeCustomSection[];
   fields: ThemeFieldDef[];
   defaults?: Record<string, string>;
 };
