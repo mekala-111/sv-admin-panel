@@ -2,6 +2,7 @@
 
 import CinematicLiveTheme from "./CinematicLiveTheme";
 import EventBannerTheme from "./EventBannerTheme";
+import ShowcaseTheme from "./ShowcaseTheme";
 import CustomThemeBlocks from "./CustomThemeBlocks";
 import EventThemeShell from "./EventThemeShell";
 import SacredGardenTheme from "./SacredGardenTheme";
@@ -17,6 +18,7 @@ const EXACT_LAYOUTS = {
   cinematic: "cinematic",
   "cinematic-live": "cinematic",
   "event-banner": "banner",
+  showcase: "showcase",
 };
 
 function resolveLayoutKey(theme) {
@@ -48,6 +50,8 @@ function renderLayout(renderer, props) {
       return <CinematicLiveTheme {...props} />;
     case "banner":
       return <EventBannerTheme {...props} />;
+    case "showcase":
+      return <ShowcaseTheme {...props} />;
     default:
       return <EventThemeShell {...props} />;
   }

@@ -14,6 +14,7 @@ import {
 import {
   getTemplateIdFromLayout,
   getThemeTemplate,
+  PICKER_TEMPLATES,
   THEME_TEMPLATES,
   type ThemeConfig,
   type ThemeCustomSection,
@@ -127,7 +128,7 @@ export function ThemeEditor({
   initial?: ThemeFormInitial;
   categories?: ThemeCategoryOption[];
 }) {
-  const initialTemplateId = getTemplateIdFromLayout(initial?.layout, initial?.config?.banner);
+  const initialTemplateId = getTemplateIdFromLayout(initial?.layout, initial?.config);
   const initialPreview = resolvePreviewSrc(initial?.previewImage, initialTemplateId);
   const initialTemplate = getThemeTemplate(initialTemplateId);
   const startedWithCustomImage = Boolean(
@@ -168,6 +169,11 @@ export function ThemeEditor({
     () => THEME_TEMPLATES.find((t) => t.id === templateId) ?? THEME_TEMPLATES[0],
     [templateId]
   );
+
+  // New themes pick from the showcase styles; an older theme being edited keeps its own template listed.
+  const pickerTemplates = PICKER_TEMPLATES.some((t) => t.id === selected.id)
+    ? PICKER_TEMPLATES
+    : [selected, ...PICKER_TEMPLATES];
 
   const displayPreview =
     customImage && previewImage ? previewImage : selected?.previewImage ?? initialPreview;
@@ -397,7 +403,7 @@ export function ThemeEditor({
                 onChange={(e) => onTemplateChange(e.target.value)}
                 className="mb-2 w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13.5px]"
               >
-                {THEME_TEMPLATES.map((t) => (
+                {pickerTemplates.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.label}
                   </option>
@@ -407,7 +413,7 @@ export function ThemeEditor({
                 {selected.description}
               </p>
               <div className="grid max-h-[280px] grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2">
-                {THEME_TEMPLATES.map((t) => {
+                {pickerTemplates.map((t) => {
                   const active = t.id === templateId;
                   return (
                     <button

@@ -1,4 +1,5 @@
 import { BANNER_PRESETS } from "./lib/banner-presets";
+import { SHOWCASE_PRESETS } from "./lib/showcase-presets";
 
 export type ThemeFieldType =
   | "text"
@@ -55,6 +56,8 @@ export type ThemeConfig = {
   eventTypes?: string[];
   /** event-banner layout: which CSS artwork preset to draw (lib/banner-presets). */
   banner?: string;
+  /** showcase layout: which card style to draw (lib/showcase-presets). */
+  showcase?: string;
 };
 
 export type ThemeTemplate = {
@@ -311,14 +314,55 @@ for (const preset of BANNER_PRESETS) {
   });
 }
 
+/** Vendor content fields for the showcase cards — the cover image is the framed photo. */
+export const SHOWCASE_FIELDS: ThemeFieldDef[] = [
+  { key: "pageTitle", label: "Names / title (shown above LIVE STREAM)", type: "text", placeholder: "Ravi weds Rani" },
+  { key: "eventDate", label: "Event date", type: "date" },
+  { key: "eventTime", label: "Event time", type: "text", placeholder: "6:00 PM IST" },
+  { key: "eventPlace", label: "Venue", type: "text", placeholder: "City or venue" },
+  { key: "coverImage", label: "Main photo (shown in the frame)", type: "image", hint: "Couple / host photo · JPEG/PNG/WebP" },
+  { key: "customImage", label: "Player poster", type: "image", hint: "Shown on the player before it starts" },
+  { key: "remarks1", label: "Thank-you message", type: "textarea", placeholder: "Thank you for being a part of our special day." },
+  { key: "scrollMessage", label: "Ticker message", type: "textarea", placeholder: "Welcome message" },
+  { key: "galleryImages", label: "Gallery images", type: "gallery", maxItems: 12 },
+  { key: "logoImage", label: "Logo", type: "image", hint: "JPEG/PNG" },
+];
+
+/** The 12 showcase styles — the only templates offered when creating a theme. */
+export const PICKER_TEMPLATES: ThemeTemplate[] = SHOWCASE_PRESETS.map((preset) => ({
+  id: `showcase-${preset.key}`,
+  label: preset.label,
+  description: preset.description,
+  previewImage: "",
+  previewStyle: preset.page,
+  config: {
+    layout: "showcase",
+    showcase: preset.key,
+    colors: { ...preset.colors },
+    fontFamily: preset.titleFont,
+    sections: LIVE_SECTIONS,
+    fields: SHOWCASE_FIELDS,
+    eventTypes: [...preset.eventTypes],
+  },
+}));
+// Older templates stay registered (after these) so existing themes can still be edited.
+THEME_TEMPLATES.unshift(...PICKER_TEMPLATES);
+
 export function getThemeTemplate(id: string): ThemeTemplate | undefined {
   return THEME_TEMPLATES.find((t) => t.id === id);
 }
 
-export function getTemplateIdFromLayout(layout?: string | null, banner?: string | null): string {
+export function getTemplateIdFromLayout(
+  layout?: string | null,
+  style?: { banner?: string | null; showcase?: string | null } | null
+): string {
   if (!layout) return THEME_TEMPLATES[0]?.id ?? "wedding-theme-traditional";
-  if (layout === "event-banner" && banner) {
-    const byBanner = THEME_TEMPLATES.find((t) => t.config.banner === banner);
+  if (layout === "showcase" && style?.showcase) {
+    const byShowcase = THEME_TEMPLATES.find((t) => t.config.showcase === style.showcase);
+    if (byShowcase) return byShowcase.id;
+  }
+  if (layout === "event-banner" && style?.banner) {
+    const byBanner = THEME_TEMPLATES.find((t) => t.config.banner === style.banner);
     if (byBanner) return byBanner.id;
   }
   const byLayout = THEME_TEMPLATES.find((t) => t.config.layout === layout);
