@@ -6,6 +6,14 @@ import { attachRefreshedSessionCookies } from "@/lib/session-cookies";
 const PUBLIC_PATHS = ["/login"];
 const ADMIN_BASE = process.env.NEXT_PUBLIC_ADMIN_BASE_URL || process.env.ADMIN_BASE_URL || "";
 
+/** HTTPS-only in production: never redirect a real domain to http:// (blocked as mixed content). */
+function absolute(path: string, request: NextRequest): URL {
+  const url = new URL(path, request.url);
+  const local = url.hostname === "localhost" || /^\d{1,3}(\.\d{1,3}){3}$/.test(url.hostname);
+  if (url.protocol === "http:" && !local && process.env.ALLOW_HTTP_ORIGIN !== "true") url.protocol = "https:";
+  return url;
+}
+
 export async function proxy(request: NextRequest) {
   // The access token lives 15 minutes; the refresh token is what keeps the session alive.
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
@@ -24,11 +32,11 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   if (!isPublic && pathname !== "/" && !hasValidAuth) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(absolute("/login", request));
   }
 
   if ((pathname === "/login" || pathname === "/") && hasValidAuth) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(absolute("/dashboard", request));
   }
 
   if (!hasValidAuth) return NextResponse.next();
