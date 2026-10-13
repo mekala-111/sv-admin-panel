@@ -101,7 +101,9 @@ function LoginStep({ error }: { error?: string }) {
 
         {error ? (
           <p className="mb-4 text-xs font-semibold text-[var(--color-danger)]" role="alert">
-            Enter a valid email and password.
+            {error === "session"
+              ? "Your session expired. Please log in again."
+              : "Enter a valid email and password."}
           </p>
         ) : null}
 

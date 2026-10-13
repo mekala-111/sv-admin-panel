@@ -6,6 +6,7 @@
  */
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ACCESS_TOKEN_COOKIE } from "./cookies";
 
 export class ApiError extends Error {
@@ -82,6 +83,12 @@ async function rawApiCall(
     data = await response.json();
   } else {
     data = await response.text();
+  }
+
+  // Session is gone (refresh failed or was revoked): send the admin to log in instead of crashing the page.
+  // Auth endpoints are excluded so the login action can show its own error.
+  if (response.status === 401 && !path.replace(/^\/+/, "").startsWith("auth/")) {
+    redirect("/login?error=session");
   }
 
   if (!response.ok || (isEnvelope(data) && data.success === false)) {
