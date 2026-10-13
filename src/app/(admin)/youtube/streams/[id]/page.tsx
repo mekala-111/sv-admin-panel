@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BackLink } from "@/components/ui/Button";
+import { BackLink, Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { fetchYoutubeStreamDetail } from "@/lib/hooks/useAdminYoutube";
@@ -16,15 +16,9 @@ export default async function StreamDetailPage({
   const stream = await fetchYoutubeStreamDetail(id);
   if (!stream) notFound();
 
-  const youtubeHref =
-    stream.liveUrl ||
-    (stream.videoId && stream.videoId !== "—"
-      ? `https://www.youtube.com/watch?v=${stream.videoId}`
-      : null);
-
   return (
     <div>
-      <BackLink href="/youtube?tab=Event%20Streams" label="Back to YouTube" />
+      <BackLink href="/youtube" label="Back to YouTube" />
       <div className="mb-5 flex flex-wrap items-center gap-2.5">
         <div className="text-2xl font-extrabold text-[var(--color-text)]">
           {stream.event?.eventName ?? "Untitled event"}

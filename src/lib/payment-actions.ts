@@ -1,11 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import {
-  approveEventCreationPayment,
-  rejectEventCreationPayment,
-  upsertSetting,
-} from "./db";
+import { api } from "./api";
+
+async function upsertSetting(key: string, value: string) {
+  await api.put(`/settings/${encodeURIComponent(key)}`, { value });
+}
 
 export async function savePaymentSettingsAction(formData: FormData) {
   const payeeName = String(formData.get("payeeName") ?? "").trim();
@@ -20,27 +20,4 @@ export async function savePaymentSettingsAction(formData: FormData) {
     redirect("/settings?section=Payment&error=1");
   }
   redirect("/settings?section=Payment&saved=1");
-}
-
-export async function approvePaymentAction(formData: FormData) {
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) redirect("/payments?tab=Pending");
-  try {
-    await approveEventCreationPayment(id);
-  } catch {
-    redirect("/payments?tab=Pending&error=approve");
-  }
-  redirect("/payments?tab=Successful&success=Payment%20approved");
-}
-
-export async function rejectPaymentAction(formData: FormData) {
-  const id = String(formData.get("id") ?? "").trim();
-  const reason = String(formData.get("reason") ?? "").trim();
-  if (!id) redirect("/payments?tab=Pending");
-  try {
-    await rejectEventCreationPayment(id, reason || undefined);
-  } catch {
-    redirect("/payments?tab=Pending&error=reject");
-  }
-  redirect("/payments?tab=Failed&success=Payment%20rejected");
 }

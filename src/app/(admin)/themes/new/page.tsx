@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { ThemeForm } from "../ThemeForm";
-import { listThemeCategories } from "@/lib/db";
+import { fetchThemeCategories } from "@/lib/hooks/useAdminThemes";
 
 export default async function CreateThemePage({
   searchParams,
 }: PageProps<"/themes/new">) {
   const sp = await searchParams;
   const error = Array.isArray(sp.error) ? sp.error[0] : sp.error;
-  const categories = await listThemeCategories();
+  const categories = await fetchThemeCategories().catch(() => []);
 
   return (
     <div className="mx-auto max-w-[1400px]">

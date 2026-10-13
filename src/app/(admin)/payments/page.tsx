@@ -1,4 +1,4 @@
-import { Card, CardTitle } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { PillTabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
@@ -23,9 +23,7 @@ function statusLabel(status: string): string {
 
 export default async function PaymentsPage({
   searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+}: PageProps<"/payments">) {
   const sp = await searchParams;
   const tabParam = toParam(sp.tab);
   const active = FILTERS.find((f) => f.label === tabParam) ?? FILTERS[0];
@@ -44,32 +42,8 @@ export default async function PaymentsPage({
 
   return (
     <div>
-      <div className="mb-5 text-[22px] font-extrabold text-[var(--color-text)]">Payments</div>
-
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">Platform wallet</div>
-          <div className="text-xl font-extrabold text-[var(--color-text)]">{platform.balance}</div>
-          <div className="mt-1 text-[11px] text-[var(--color-text-muted)]">Event creation fees</div>
-        </Card>
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">Awaiting approval</div>
-          <div className="text-xl font-extrabold text-[var(--color-warning)]">
-            {pendingFees.length}
-          </div>
-        </Card>
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">Today&apos;s Revenue</div>
-          <div className="text-xl font-extrabold text-[var(--color-text)]">{stats.todayRevenue}</div>
-        </Card>
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">Total Revenue</div>
-          <div className="text-xl font-extrabold text-[var(--color-text)]">{stats.monthlyRevenue}</div>
-        </Card>
-        <Card>
-          <div className="mb-1.5 text-xs text-[var(--color-text-muted)]">Pending amount</div>
-          <div className="text-xl font-extrabold text-[var(--color-warning)]">{stats.pending}</div>
-        </Card>
+      <div className="mb-5 text-[22px] font-extrabold text-[var(--color-text)]">
+        Payments
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">

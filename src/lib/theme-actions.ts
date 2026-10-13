@@ -1,8 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiCall } from "@/lib/api";
 import { getThemeTemplate, type ThemeConfig } from "@/lib/theme-templates";
+
+/** Keeps the `{ data }` shape these actions were written against. */
+async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<{ data: T }> {
+  return { data: await apiCall<T>(path, init) };
+}
 
 function rethrowRedirect(err: unknown) {
   if (

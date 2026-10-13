@@ -8,12 +8,12 @@ type Step = "login" | "forgot" | "otp" | "reset";
 
 export default async function LoginPage({
   searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+}: PageProps<"/login">) {
   const params = await searchParams;
   const stepParam = Array.isArray(params.step) ? params.step[0] : params.step;
-  const step: Step = (["login", "forgot", "otp", "reset"] as const).includes(stepParam as Step)
+  const step: Step = (["login", "forgot", "otp", "reset"] as const).includes(
+    stepParam as Step
+  )
     ? (stepParam as Step)
     : "login";
   const error = Array.isArray(params.error) ? params.error[0] : params.error;
@@ -23,14 +23,20 @@ export default async function LoginPage({
       <div className="w-full max-w-[400px] rounded-2xl border border-[var(--color-border)] bg-white p-6 sm:p-9">
         <div className="mb-7 flex items-center justify-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={svLiveLogo} alt="SV Live" className="h-9 w-9 rounded-[10px] object-cover" />
-          <div className="text-[17px] font-extrabold text-[var(--color-text)]">SV LIVE</div>
+          <img
+            src={svLiveLogo}
+            alt="SV Live"
+            className="h-9 w-9 rounded-[10px] object-cover"
+          />
+          <div className="text-[17px] font-extrabold text-[var(--color-text)]">
+            SV LIVE
+          </div>
         </div>
 
         {step === "login" && <LoginStep error={error} />}
         {step === "forgot" && <ForgotStep />}
-        {step === "otp" && <OtpStep email={email} />}
-        {step === "reset" && <ResetStep email={email} />}
+        {step === "otp" && <OtpStep />}
+        {step === "reset" && <ResetStep />}
       </div>
     </div>
   );
@@ -39,8 +45,12 @@ export default async function LoginPage({
 function StepTitle({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <>
-      <div className="mb-1 text-center text-[18px] font-extrabold text-[var(--color-text)]">{title}</div>
-      <div className="mb-6 text-center text-[13px] text-[var(--color-text-muted)]">{subtitle}</div>
+      <div className="mb-1 text-center text-[18px] font-extrabold text-[var(--color-text)]">
+        {title}
+      </div>
+      <div className="mb-6 text-center text-[13px] text-[var(--color-text-muted)]">
+        {subtitle}
+      </div>
     </>
   );
 }
@@ -121,60 +131,65 @@ function LoginStep({ error }: { error?: string }) {
 function ForgotStep() {
   return (
     <>
-      <StepTitle title="Forgot password" subtitle="We'll email a reset code" />
-      <form action={forgotPasswordAction} className="flex flex-col gap-3.5">
-        <label className="flex flex-col gap-1.5 text-[12px] font-semibold text-[var(--color-text-muted)]">
-          Email
-          <input
-            name="email"
-            type="email"
-            required
-            className="rounded-[9px] border border-[var(--color-border)] px-3.5 py-2.5 text-[14px]"
-          />
-        </label>
-        <Button type="submit" variant="gradient" className="w-full">
-          Send code
-        </Button>
-        <Link href="/login" className="text-center text-xs font-semibold text-[var(--color-primary)]">
-          Back to login
-        </Link>
-      </form>
+      <StepTitle
+        title="Forgot Password"
+        subtitle="We'll send a code to your registered email"
+      />
+      <div className="mb-5">
+        <FieldDisplay label="Email" value="superadmin@svlive.in" />
+      </div>
+      <Button href="/login?step=otp" variant="gradient" className="mb-3.5 w-full">
+        Send Reset Code
+      </Button>
+      <Button href="/login?step=login" variant="secondary" className="w-full border-none text-[var(--color-text-muted)]">
+        &larr; Back to Login
+      </Button>
     </>
   );
 }
 
-function OtpStep({ email }: { email?: string }) {
+function OtpStep() {
+  const digits = ["4", "2", "8", "1", "9", "5"];
   return (
     <>
-      <StepTitle title="Enter code" subtitle={`Code sent to ${email || "your email"}`} />
-      <form action={resetPasswordAction} className="flex flex-col gap-3.5">
-        <input type="hidden" name="email" value={email || ""} />
-        <label className="flex flex-col gap-1.5 text-[12px] font-semibold text-[var(--color-text-muted)]">
-          Reset code
-          <input
-            name="code"
-            required
-            className="rounded-[9px] border border-[var(--color-border)] px-3.5 py-2.5 text-[14px]"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-[12px] font-semibold text-[var(--color-text-muted)]">
-          New password
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            className="rounded-[9px] border border-[var(--color-border)] px-3.5 py-2.5 text-[14px]"
-          />
-        </label>
-        <Button type="submit" variant="gradient" className="w-full">
-          Reset password
-        </Button>
-      </form>
+      <StepTitle
+        title="Verify Code"
+        subtitle="Enter the 6-digit code sent to your email"
+      />
+      <div className="mb-5 grid grid-cols-6 gap-1.5 sm:gap-2">
+        {digits.map((d, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-[var(--color-border)] py-3 text-center text-[15px] font-bold text-[var(--color-text)]"
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+      <Button href="/login?step=reset" variant="gradient" className="mb-3.5 w-full">
+        Verify
+      </Button>
+      <Button href="/login?step=login" variant="secondary" className="w-full border-none text-[var(--color-text-muted)]">
+        &larr; Back to Login
+      </Button>
     </>
   );
 }
 
-function ResetStep({ email }: { email?: string }) {
-  return <OtpStep email={email} />;
+function ResetStep() {
+  return (
+    <>
+      <StepTitle
+        title="Reset Password"
+        subtitle="Choose a new password for your account"
+      />
+      <div className="mb-5 flex flex-col gap-3.5">
+        <FieldDisplay label="New Password" value="••••••••" muted />
+        <FieldDisplay label="Confirm Password" value="••••••••" muted />
+      </div>
+      <Button href="/login?step=login" variant="gradient" className="w-full">
+        Reset Password
+      </Button>
+    </>
+  );
 }

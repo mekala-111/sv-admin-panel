@@ -9,17 +9,10 @@ const TABS = ["Profile Info", "Security"];
 
 export default async function ProfilePage({
   searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+}: PageProps<"/profile">) {
   const sp = await searchParams;
   const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
   const tab = TABS.includes(tabParam ?? "") ? (tabParam as string) : "Profile Info";
-  const [user, loginHistory, sessions] = await Promise.all([
-    getSessionUser(),
-    listLoginHistory(),
-    listSessions(),
-  ]);
 
   const user = await getAdminUser();
 
