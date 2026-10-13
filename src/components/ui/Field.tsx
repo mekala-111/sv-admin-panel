@@ -35,6 +35,7 @@ export function TextField({
   type = "text",
   required = false,
   defaultValue,
+  autoComplete,
 }: {
   label: string;
   name: string;
@@ -42,6 +43,7 @@ export function TextField({
   type?: string;
   required?: boolean;
   defaultValue?: string | number;
+  autoComplete?: string;
 }) {
   return (
     <div>
@@ -58,6 +60,8 @@ export function TextField({
         placeholder={placeholder}
         required={required}
         defaultValue={defaultValue}
+        // Admin password fields set someone else's password — never autofill the admin's own.
+        autoComplete={autoComplete ?? (type === "password" ? "new-password" : undefined)}
         className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
       />
     </div>
