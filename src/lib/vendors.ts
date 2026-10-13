@@ -53,7 +53,9 @@ export async function createVendorAction(formData: FormData) {
   }
 
   revalidatePath("/vendors");
-  redirect(`/vendors/${vendor.id}`);
+  // FlashToasts shows ?success= as a popup on the vendor page, then strips it from the URL.
+  const message = `Vendor "${companyName}" created successfully.`;
+  redirect(`/vendors/${vendor.id}?success=${encodeURIComponent(message)}`);
 }
 
 export async function updateVendorAction(id: string, formData: FormData) {
