@@ -11,6 +11,33 @@ import {
   THEME_TEMPLATES,
 } from "@/themes/theme-templates";
 
+/** Must match the vendor panel's `eventTypeOptions` (sv-vendor-panel/src/lib/data.ts). */
+export const EVENT_TYPE_OPTIONS = [
+  "Marriage",
+  "Marriage-Events",
+  "Engagement",
+  "Reception",
+  "Birthday",
+  "Baby Shower",
+  "Cradle Ceremony",
+  "Church Event",
+  "Devotional",
+  "Dhothi Ceremony",
+  "Gruhapravesham",
+  "Half Saree",
+  "Muslim Wedding",
+  "Namakarana",
+  "Padi Pooja",
+  "Retirement",
+  "Reunion",
+  "Sangeeth",
+  "Seemantham",
+  "Shastipoorthi",
+  "Upanayanam",
+  "Vonifunction",
+  "General Event",
+];
+
 export type ThemeSampleContent = Record<string, string | unknown>;
 
 export const DEFAULT_SAMPLE_WEDDING: ThemeSampleContent = {
@@ -67,6 +94,7 @@ export function mergeThemeConfig(
     fields?: ThemeFieldDef[];
     customSections?: ThemeCustomSection[];
     backgroundImage?: string;
+    eventTypes?: string[];
   }
 ): ThemeConfig {
   const template = getThemeTemplate(templateId) ?? THEME_TEMPLATES[0];
@@ -81,6 +109,7 @@ export function mergeThemeConfig(
     fields: overrides.fields ?? base.fields,
     customSections: overrides.customSections ?? base.customSections ?? [],
     backgroundImage: overrides.backgroundImage ?? base.backgroundImage,
+    eventTypes: overrides.eventTypes ?? base.eventTypes ?? [],
     layout: base.layout,
   };
 }

@@ -49,6 +49,8 @@ export type ThemeConfig = {
   customSections?: ThemeCustomSection[];
   fields: ThemeFieldDef[];
   defaults?: Record<string, string>;
+  /** Vendor wizard shows this design only for these event types; empty = all types. */
+  eventTypes?: string[];
 };
 
 export type ThemeTemplate = {

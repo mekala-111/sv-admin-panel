@@ -4,6 +4,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableCard, Thead, Tr, Td } from "@/components/ui/Table";
 import {
+  CalendarClockIcon,
   CustomersIcon,
   EventsIcon,
   LiveIcon,

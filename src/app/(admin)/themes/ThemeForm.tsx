@@ -8,6 +8,7 @@ import {
   buildThemePreviewPayload,
   configFromStored,
   defaultSampleForTemplate,
+  EVENT_TYPE_OPTIONS,
   mergeThemeConfig,
 } from "@/lib/theme-config-utils";
 import {
@@ -157,6 +158,7 @@ export function ThemeEditor({
     initialConfig.customSections ?? []
   );
   const [backgroundImage, setBackgroundImage] = useState(initialConfig.backgroundImage ?? "");
+  const [eventTypes, setEventTypes] = useState<string[]>(initialConfig.eventTypes ?? []);
   const [bgOver, setBgOver] = useState(false);
   const [sectionTitle, setSectionTitle] = useState("");
   const [fieldLabel, setFieldLabel] = useState("");
@@ -180,8 +182,19 @@ export function ThemeEditor({
         fields,
         customSections,
         backgroundImage,
+        eventTypes,
       }),
-    [templateId, fontFamily, colors, sections, sectionOrder, fields, customSections, backgroundImage]
+    [
+      templateId,
+      fontFamily,
+      colors,
+      sections,
+      sectionOrder,
+      fields,
+      customSections,
+      backgroundImage,
+      eventTypes,
+    ]
   );
 
   const previewPayload = useMemo(() => {
@@ -346,6 +359,32 @@ export function ThemeEditor({
                 </select>
               </label>
             ) : null}
+
+            <div>
+              <span className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
+                Event types
+              </span>
+              <p className="mb-2 text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+                Vendors see this design only for the ticked event types. Leave all unticked to show
+                it for every event type.
+              </p>
+              <div className="grid max-h-[180px] grid-cols-2 gap-x-3 gap-y-1.5 overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-[12.5px]">
+                {EVENT_TYPE_OPTIONS.map((type) => (
+                  <label key={type} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={eventTypes.includes(type)}
+                      onChange={(e) =>
+                        setEventTypes((prev) =>
+                          e.target.checked ? [...prev, type] : prev.filter((t) => t !== type)
+                        )
+                      }
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
+            </div>
 
             <div>
               <span className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
