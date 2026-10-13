@@ -1,3 +1,5 @@
+import { BANNER_PRESETS } from "./lib/banner-presets";
+
 export type ThemeFieldType =
   | "text"
   | "date"
@@ -51,6 +53,8 @@ export type ThemeConfig = {
   defaults?: Record<string, string>;
   /** Vendor wizard shows this design only for these event types; empty = all types. */
   eventTypes?: string[];
+  /** event-banner layout: which CSS artwork preset to draw (lib/banner-presets). */
+  banner?: string;
 };
 
 export type ThemeTemplate = {
@@ -58,6 +62,8 @@ export type ThemeTemplate = {
   label: string;
   description: string;
   previewImage: string;
+  /** CSS background used as the thumbnail when there is no preview image file. */
+  previewStyle?: string;
   config: ThemeConfig;
 };
 
@@ -285,12 +291,36 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
   },
 ];
 
+/** eLive-style banner themes: one template per CSS artwork preset, all on the "event-banner" layout. */
+for (const preset of BANNER_PRESETS) {
+  THEME_TEMPLATES.push({
+    id: `banner-${preset.key}`,
+    label: `Event Banner · ${preset.label}`,
+    description: `${preset.description} Upload a background image to replace the artwork.`,
+    previewImage: "",
+    previewStyle: preset.hero,
+    config: {
+      layout: "event-banner",
+      banner: preset.key,
+      colors: { ...preset.colors },
+      fontFamily: preset.fontFamily,
+      sections: LIVE_SECTIONS,
+      fields: LIVE_EVENT_FIELDS,
+      eventTypes: [...preset.eventTypes],
+    },
+  });
+}
+
 export function getThemeTemplate(id: string): ThemeTemplate | undefined {
   return THEME_TEMPLATES.find((t) => t.id === id);
 }
 
-export function getTemplateIdFromLayout(layout?: string | null): string {
+export function getTemplateIdFromLayout(layout?: string | null, banner?: string | null): string {
   if (!layout) return THEME_TEMPLATES[0]?.id ?? "wedding-theme-traditional";
+  if (layout === "event-banner" && banner) {
+    const byBanner = THEME_TEMPLATES.find((t) => t.config.banner === banner);
+    if (byBanner) return byBanner.id;
+  }
   const byLayout = THEME_TEMPLATES.find((t) => t.config.layout === layout);
   if (byLayout) return byLayout.id;
   const byId = THEME_TEMPLATES.find((t) => t.id === layout);

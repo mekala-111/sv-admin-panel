@@ -127,7 +127,7 @@ export function ThemeEditor({
   initial?: ThemeFormInitial;
   categories?: ThemeCategoryOption[];
 }) {
-  const initialTemplateId = getTemplateIdFromLayout(initial?.layout);
+  const initialTemplateId = getTemplateIdFromLayout(initial?.layout, initial?.config?.banner);
   const initialPreview = resolvePreviewSrc(initial?.previewImage, initialTemplateId);
   const initialTemplate = getThemeTemplate(initialTemplateId);
   const startedWithCustomImage = Boolean(
@@ -226,6 +226,8 @@ export function ThemeEditor({
     setFields(next.fields);
     setCustomSections(next.customSections ?? []);
     setBackgroundImage(next.backgroundImage ?? "");
+    // Start from the template's suggested event types; the admin can still adjust them.
+    setEventTypes(next.eventTypes ?? []);
     if (!customImage) setPreviewImage("");
   }
 
@@ -418,8 +420,12 @@ export function ThemeEditor({
                           : "border-[var(--color-border)]"
                       }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={t.previewImage} alt={t.label} className="h-[72px] w-full object-cover" />
+                      {t.previewImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={t.previewImage} alt={t.label} className="h-[72px] w-full object-cover" />
+                      ) : (
+                        <div className="h-[72px] w-full" style={{ background: t.previewStyle }} aria-hidden />
+                      )}
                       <span className="block truncate px-1.5 py-1 text-[10px] font-semibold text-[var(--color-text)]">
                         {t.label}
                       </span>

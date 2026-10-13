@@ -1,6 +1,7 @@
 "use client";
 
 import CinematicLiveTheme from "./CinematicLiveTheme";
+import EventBannerTheme from "./EventBannerTheme";
 import CustomThemeBlocks from "./CustomThemeBlocks";
 import EventThemeShell from "./EventThemeShell";
 import SacredGardenTheme from "./SacredGardenTheme";
@@ -15,6 +16,7 @@ const EXACT_LAYOUTS = {
   "the-sacred-garden": "sacred",
   cinematic: "cinematic",
   "cinematic-live": "cinematic",
+  "event-banner": "banner",
 };
 
 function resolveLayoutKey(theme) {
@@ -44,6 +46,8 @@ function renderLayout(renderer, props) {
       return <SacredGardenTheme {...props} />;
     case "cinematic":
       return <CinematicLiveTheme {...props} />;
+    case "banner":
+      return <EventBannerTheme {...props} />;
     default:
       return <EventThemeShell {...props} />;
   }
