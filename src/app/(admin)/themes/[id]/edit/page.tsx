@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
-import { BackLink } from "@/components/ui/Button";
-import { Card, CardTitle } from "@/components/ui/Card";
-import { TextField, TextAreaField, SelectField } from "@/components/ui/Field";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { fetchThemeDetail, fetchThemeCategories } from "@/lib/hooks/useAdminThemes";
-import { createThemeAction, updateThemeAction } from "@/lib/themes";
+import { assignThemeToAllVendorsAction, duplicateThemeAction } from "@/lib/theme-actions";
+import type { ThemeConfig } from "@/lib/theme-templates";
+import { ThemeForm } from "../../ThemeForm";
 
 function toParam(v: string | string[] | undefined): string {
   return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
@@ -14,68 +15,79 @@ export default async function ThemeEditorPage({
   searchParams,
 }: PageProps<"/themes/[id]/edit">) {
   const { id } = await params;
+  // Old "create" links pointed at /themes/0/edit — the visual editor lives at /themes/new.
+  if (id === "0") redirect("/themes/new");
+
   const sp = await searchParams;
+  const [theme, categories] = await Promise.all([
+    fetchThemeDetail(id),
+    fetchThemeCategories().catch(() => []),
+  ]);
+  if (!theme) notFound();
+
+  const saved = toParam(sp.saved);
+  const created = toParam(sp.created);
+  const assigned = toParam(sp.assigned);
   const error = toParam(sp.error);
-  const isNew = id === "0";
-
-  const categories = await fetchThemeCategories().catch(() => []);
-  const theme = isNew ? null : await fetchThemeDetail(id);
-  if (!isNew && !theme) notFound();
-
-  const action = isNew ? createThemeAction : updateThemeAction.bind(null, id);
+  const config = (theme.config ?? {}) as Partial<ThemeConfig>;
 
   return (
-    <div className="max-w-[700px]">
-      <BackLink href="/themes" label="Back to Themes" />
-      <div className="mb-5 text-[22px] font-extrabold text-[var(--color-text)]">
-        {isNew ? "Create Theme" : `Edit — ${theme!.name}`}
+    <div className="mx-auto max-w-[1400px]">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Link href="/themes" className="text-[13px] font-semibold text-[var(--color-text-muted)]">
+          &larr; Back to Themes &middot;{" "}
+          <span className="font-bold text-[var(--color-text)]">{theme.name}</span>
+        </Link>
+        <div className="flex flex-wrap gap-2">
+          <form action={duplicateThemeAction}>
+            <input type="hidden" name="id" value={theme.id} />
+            <Button variant="secondary" type="submit">
+              Duplicate
+            </Button>
+          </form>
+          <form action={assignThemeToAllVendorsAction}>
+            <input type="hidden" name="id" value={theme.id} />
+            <Button variant="secondary" type="submit">
+              Send to all vendors
+            </Button>
+          </form>
+        </div>
       </div>
 
-      <Card>
-        <CardTitle>Theme Details</CardTitle>
-        <form action={action} className="flex flex-col gap-3.5">
-          <TextField label="Name" name="name" defaultValue={theme?.name} required />
+      {created || saved || assigned ? (
+        <p className="mb-4 text-[13px] font-semibold text-[#1E9E5A]">
+          {created
+            ? "Theme created and sent to all vendors."
+            : assigned
+              ? "Theme sent to all active vendors."
+              : "Theme saved."}{" "}
+          Vendors only see themes assigned to them.
+        </p>
+      ) : null}
 
-          <SelectField
-            label="Category"
-            name="categoryId"
-            options={["", ...categories.map((c) => c.id)]}
-            defaultValue={theme?.categoryId ?? ""}
-          />
-          {categories.length > 0 ? (
-            <div className="-mt-2 text-xs text-[var(--color-text-muted)]">
-              Categories: {categories.map((c) => `${c.name} (${c.id.slice(0, 8)}…)`).join(" · ")}
-            </div>
-          ) : null}
+      <div className="mb-5">
+        <h1 className="mb-1 text-[22px] font-extrabold text-[var(--color-text)]">Edit Theme</h1>
+        <p className="text-[13px] text-[var(--color-text-muted)]">
+          Preview how this theme renders for guests. Layout:{" "}
+          <code className="font-semibold text-[var(--color-text)]">{config.layout ?? "—"}</code>
+        </p>
+      </div>
 
-          <SelectField
-            label="Status"
-            name="status"
-            options={["DRAFT", "ACTIVE", "INACTIVE"]}
-            defaultValue={theme?.status ?? "DRAFT"}
-          />
-
-          <TextAreaField
-            label="Config (JSON)"
-            name="config"
-            placeholder='{"primaryColor": "#FF7A00"}'
-            defaultValue={theme ? JSON.stringify(theme.config, null, 2) : "{}"}
-          />
-
-          {error ? (
-            <p className="text-xs font-semibold text-[var(--color-danger)]" role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            className="w-fit rounded-[9px] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] px-6 py-2.5 text-[13px] font-bold text-white"
-          >
-            {isNew ? "Create Theme" : "Save Changes"}
-          </button>
-        </form>
-      </Card>
+      <ThemeForm
+        mode="edit"
+        error={error || null}
+        categories={categories}
+        initial={{
+          id: theme.id,
+          name: theme.name,
+          layout: config.layout,
+          previewImage: theme.previewImage,
+          status: theme.status,
+          slug: theme.slug,
+          categoryId: theme.categoryId,
+          config,
+        }}
+      />
     </div>
   );
 }

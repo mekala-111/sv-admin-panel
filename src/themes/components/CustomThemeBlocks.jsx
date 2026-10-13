@@ -26,13 +26,23 @@ const SKIP_KEYS = new Set([
   "location",
   "fontFamily",
   "fontColor",
+  "liveTiming",
+  "eventType",
+  "eventTime",
+  "whatsappImage",
+  "whatsappNumber",
+  "accessPin",
+  "youtubeChannelId",
 ]);
+
+const BOOLEAN_TYPES = new Set(["boolean", "checkbox", "toggle", "switch"]);
 
 function lookupValue(event, branding, key) {
   const custom =
     branding?.customConfig && typeof branding.customConfig === "object" ? branding.customConfig : {};
   const value = event?.[key] ?? custom[key];
-  if (value == null) return "";
+  // Toggles are layout switches, not content — never print "true"/"false".
+  if (value == null || typeof value === "boolean" || typeof value === "object") return "";
   return String(value).trim();
 }
 
@@ -46,7 +56,14 @@ export default function CustomThemeBlocks({ event, branding, theme }) {
   const sections = Array.isArray(config.customSections) ? config.customSections : [];
   const fields = Array.isArray(config.fields) ? config.fields : [];
   const sectionKeys = new Set(sections.map((s) => s.fieldKey));
-  const extraFields = fields.filter((f) => f?.key && !SKIP_KEYS.has(f.key) && !sectionKeys.has(f.key));
+  const extraFields = fields.filter(
+    (f) =>
+      f?.key &&
+      !SKIP_KEYS.has(f.key) &&
+      !f.key.startsWith("show") &&
+      !BOOLEAN_TYPES.has(f.type) &&
+      !sectionKeys.has(f.key)
+  );
   const items = [
     ...sections.map((s) => ({ key: s.fieldKey, title: s.title, type: "textarea" })),
     ...extraFields.map((f) => ({ key: f.key, title: f.label || f.key, type: f.type })),
@@ -59,8 +76,9 @@ export default function CustomThemeBlocks({ event, branding, theme }) {
     <div
       style={{
         padding: "40px 20px 64px",
-        background: colors.background || "#0b0908",
-        color: colors.text || "#f7f1e6",
+        // Match the theme above; without theme colours, inherit instead of forcing a dark band.
+        background: colors.background || "transparent",
+        color: colors.text || "inherit",
         fontFamily: config.fontFamily || "Georgia, serif",
       }}
     >

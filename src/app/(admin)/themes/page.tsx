@@ -37,7 +37,7 @@ export default async function ThemesPage({
         <div className="flex flex-wrap gap-2.5">
           <Button href="/themes/categories" variant="secondary">Categories</Button>
           <Button href="/themes/assignments" variant="secondary">Assignments</Button>
-          <Button href="/themes/0/edit" variant="primary">+ Create Theme</Button>
+          <Button href="/themes/new" variant="primary">+ Create Theme</Button>
         </div>
       </div>
 

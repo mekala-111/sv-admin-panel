@@ -6,6 +6,7 @@ import {
   formatEventDateTime,
   youtubeEmbedUrl,
 } from "../lib/event-helpers";
+import { resolveThemeSections, sectionOverridesFrom, shouldShowLivePlayer } from "../lib/theme-sections";
 import styles from "./CinematicLiveTheme.module.css";
 
 export default function CinematicLiveTheme({
@@ -18,6 +19,11 @@ export default function CinematicLiveTheme({
 }) {
   const [watching, setWatching] = useState(true);
   const embed = useMemo(() => youtubeEmbedUrl(youtube), [youtube]);
+  const sections = useMemo(
+    () => resolveThemeSections(theme, sectionOverridesFrom(event, branding)),
+    [theme, event, branding]
+  );
+  const showLive = shouldShowLivePlayer(sections, youtube, embed, event);
   const isLive = event?.status === "LIVE" || youtube?.status === "LIVE";
   const title = event?.pageTitle || event?.eventName || "Live Event";
   const fontFamily =
@@ -93,7 +99,12 @@ export default function CinematicLiveTheme({
         )}
 
         <div className={styles.playerShell}>
-          {watching && embed ? (
+          {!showLive ? (
+            cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={cover} alt="" className={styles.player} style={{ objectFit: "cover" }} />
+            ) : null
+          ) : watching && embed ? (
             <iframe
               src={embed}
               title={title}
@@ -121,7 +132,7 @@ export default function CinematicLiveTheme({
         </div>
 
         <div className={styles.actions}>
-          {embed && event?.showWatchLive !== false ? (
+          {showLive && embed && event?.showWatchLive !== false ? (
             <button type="button" className={styles.primaryBtn} onClick={() => setWatching(true)}>
               {watching ? "Playing" : "Watch Live"}
             </button>
@@ -148,7 +159,7 @@ export default function CinematicLiveTheme({
           </div>
         )}
 
-        {gallery.length > 0 ? (
+        {sections.showGallery !== false && gallery.length > 0 ? (
           <section className={styles.gallery}>
             <h2>Moments</h2>
             <div className={styles.galleryGrid}>

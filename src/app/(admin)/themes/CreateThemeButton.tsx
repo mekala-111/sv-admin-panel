@@ -1,10 +1,6 @@
 import Link from "next/link";
 
-export function CreateThemeButton({
-  categories: _categories = [],
-}: {
-  categories?: { id: string; name: string }[];
-}) {
+export function CreateThemeButton() {
   return (
     <Link
       href="/themes/new"

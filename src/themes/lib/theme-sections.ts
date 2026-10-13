@@ -40,3 +40,26 @@ export function shouldShowLivePlayer(
   if (event?.showWatchLive !== false) return true;
   return Boolean(embed || youtube?.liveUrl || youtube?.videoId);
 }
+
+const SECTION_KEYS = [
+  "showCountdown",
+  "showGallery",
+  "showSubEvents",
+  "showLivePlayer",
+  "showInvitationCard",
+  "showCouplePhotos",
+] as const;
+
+/** Per-event section toggles: branding.customConfig wins over event fields; unset keys fall back to the theme. */
+export function sectionOverridesFrom(
+  event?: Record<string, unknown> | null,
+  branding?: { customConfig?: Record<string, unknown> | null } | null,
+) {
+  const custom = branding?.customConfig ?? {};
+  const overrides: Record<string, boolean | null> = {};
+  for (const key of SECTION_KEYS) {
+    const v = custom[key] ?? event?.[key];
+    overrides[key] = typeof v === "boolean" ? v : null;
+  }
+  return overrides as NonNullable<Parameters<typeof resolveThemeSections>[1]>;
+}

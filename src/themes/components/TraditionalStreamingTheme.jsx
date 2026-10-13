@@ -13,7 +13,7 @@ import {
   resolveEventShareImageUrl,
   shareEventWithImage,
 } from "../lib/share-event";
-import { resolveThemeSections, shouldShowLivePlayer } from "../lib/theme-sections";
+import { resolveThemeSections, sectionOverridesFrom, shouldShowLivePlayer } from "../lib/theme-sections";
 import styles from "./TraditionalStreamingTheme.module.css";
 
 const DEFAULT_ASSET = "/themes/traditional-streaming";
@@ -64,7 +64,10 @@ export default function TraditionalStreamingTheme({
 }) {
   const assetBase = theme?.config?.assetPath || DEFAULT_ASSET;
   const colors = theme?.config?.colors || {};
-  const sections = useMemo(() => resolveThemeSections(theme), [theme]);
+  const sections = useMemo(
+    () => resolveThemeSections(theme, sectionOverridesFrom(event, branding)),
+    [theme, event, branding]
+  );
   const [watching, setWatching] = useState(true);
   const embed = useMemo(() => youtubeEmbedUrl(youtube), [youtube]);
   const showLive = shouldShowLivePlayer(sections, youtube, embed, event);

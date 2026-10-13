@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { coverSrc, youtubeEmbedUrl } from "../lib/event-helpers";
+import { coverSrc, resolveCountdownTarget, youtubeEmbedUrl } from "../lib/event-helpers";
 import {
   buildEventShareText,
   resolveEventShareImageUrl,
@@ -101,7 +101,23 @@ export default function SacredGardenTheme({
   const [watching, setWatching] = useState(true);
 
   const embed = useMemo(() => youtubeEmbedUrl(youtube), [youtube]);
-  const sections = useMemo(() => resolveThemeSections(theme), [theme]);
+  const sectionOverrides = useMemo(
+    () => ({
+      showSubEvents: branding?.customConfig?.showSubEvents ?? event?.showSubEvents,
+      showInvitationCard:
+        branding?.customConfig?.showInvitationCard ?? event?.showInvitationCard,
+    }),
+    [
+      branding?.customConfig?.showSubEvents,
+      branding?.customConfig?.showInvitationCard,
+      event?.showSubEvents,
+      event?.showInvitationCard,
+    ]
+  );
+  const sections = useMemo(
+    () => resolveThemeSections(theme, sectionOverrides),
+    [theme, sectionOverrides]
+  );
   const showLive = shouldShowLivePlayer(sections, youtube, embed, event);
   const isLive = event?.status === "LIVE" || youtube?.status === "LIVE";
   const { left, right } = splitCoupleName(event);
@@ -127,7 +143,7 @@ export default function SacredGardenTheme({
   const dateDots = validDate
     ? `${pad(validDate.getDate())} · ${pad(validDate.getMonth() + 1)} · ${validDate.getFullYear()}`
     : null;
-  const countdownTarget = event?.startTime || event?.eventDate || null;
+  const countdownTarget = resolveCountdownTarget(event);
   const countdown = useCountdown(sections.showCountdown !== false ? countdownTarget : null);
   const shareUrl = useMemo(() => {
     if (typeof window !== "undefined") return window.location.href;
@@ -305,6 +321,24 @@ export default function SacredGardenTheme({
           <section className={`${styles.section} ${styles.sectionAlt}`} id="live">
             <div className={styles.sectionLabel}>WATCH WITH US</div>
             <h2 className={styles.sectionTitle}>Live Streaming</h2>
+            {countdown && !countdown.ended && sections.showCountdown !== false ? (
+              <div className={styles.countdownGrid} style={{ marginBottom: 18 }}>
+                {[
+                  ["Days", countdown.days],
+                  ["Hours", countdown.hours],
+                  ["Minutes", countdown.minutes],
+                  ["Seconds", countdown.seconds],
+                ].map(([label, value], index, arr) => (
+                  <div key={label} style={{ display: "contents" }}>
+                    <div style={{ flex: 1 }}>
+                      <div className={styles.countdownNum}>{pad(value)}</div>
+                      <div className={styles.countdownLabel}>{label}</div>
+                    </div>
+                    {index < arr.length - 1 ? <div className={styles.countdownColon}>:</div> : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <div className={styles.playerShell}>
               {watching && embed ? (
                 <iframe
@@ -318,8 +352,9 @@ export default function SacredGardenTheme({
                 <button
                   type="button"
                   className={styles.poster}
-                  onClick={() => setWatching(true)}
+                  onClick={() => embed && setWatching(true)}
                   style={{ backgroundImage: `url(${cover || `${ASSET}/couple-portrait.webp`})` }}
+                  disabled={!embed}
                 >
                   <span className={styles.posterShade} />
                   <span className={styles.watchBtn}>
@@ -328,11 +363,13 @@ export default function SacredGardenTheme({
                 </button>
               )}
             </div>
-            {event?.showWatchLive !== false ? (
+            {event?.showWatchLive !== false || event?.showSocialShare !== false ? (
               <div className={styles.pillRow}>
-                <button type="button" className={styles.pill} onClick={() => setWatching(true)}>
-                  {embed ? "WATCH LIVE" : "STREAM STARTING SOON"}
-                </button>
+                {embed && event?.showWatchLive !== false ? (
+                  <button type="button" className={styles.pill} onClick={() => setWatching(true)}>
+                    {watching ? "WATCHING LIVE" : "WATCH LIVE"}
+                  </button>
+                ) : null}
                 {event?.showSocialShare !== false && shareUrl ? (
                   <button type="button" className={styles.pill} onClick={shareInvite}>
                     SHARE INVITE
@@ -369,7 +406,22 @@ export default function SacredGardenTheme({
                       </>
                     ) : null}
                     <div className={styles.eventDotRing} style={{ position: "relative" }}>
-                      <div className={styles.eventDot} />
+                      {row.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={coverSrc(row.image)}
+                          alt=""
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                            border: "2px solid #c9a227",
+                          }}
+                        />
+                      ) : (
+                        <div className={styles.eventDot} />
+                      )}
                     </div>
                     <div
                       className={`${styles.eventName} ${featured ? styles.eventNameFeatured : ""}`}

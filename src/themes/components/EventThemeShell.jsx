@@ -7,7 +7,7 @@ import {
   youtubeEmbedUrl,
 } from "../lib/event-helpers";
 import { buildEventShareText, resolveEventShareImageUrl, shareEventWithImage } from "../lib/share-event";
-import { resolveThemeSections, shouldShowLivePlayer } from "../lib/theme-sections";
+import { resolveThemeSections, sectionOverridesFrom, shouldShowLivePlayer } from "../lib/theme-sections";
 import styles from "./EventThemeShell.module.css";
 
 const FALLBACK_COLORS = {
@@ -19,13 +19,29 @@ const FALLBACK_COLORS = {
   fontFamily: "Georgia, serif",
 };
 
+/** Same precedence as EventThemeRenderer's layout key. */
 function resolveLayout(theme) {
-  return theme?.config?.layout || theme?.slug || "cinematic";
+  return theme?.config?.layout || theme?.config?.preset || theme?.slug || "cinematic";
+}
+
+/** Parses #rgb, #rrggbb or rgb()/rgba() into [r, g, b]; null for anything else. */
+function parseColor(value) {
+  const v = String(value || "").trim().toLowerCase();
+  let m = v.match(/^#([0-9a-f]{3})$/);
+  if (m) return m[1].split("").map((c) => parseInt(c + c, 16));
+  m = v.match(/^#([0-9a-f]{6})/);
+  if (m) return [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16));
+  m = v.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/);
+  if (m) return [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (v === "white") return [255, 255, 255];
+  return null;
 }
 
 function isLightTheme(colors) {
-  const bg = String(colors.background || "").toLowerCase();
-  return bg.includes("#f") || bg.includes("#fff") || bg.includes("250") || bg.includes("248");
+  const rgb = parseColor(colors.background);
+  if (!rgb) return false;
+  const [r, g, b] = rgb;
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160;
 }
 
 export default function EventThemeShell({
@@ -38,7 +54,10 @@ export default function EventThemeShell({
 }) {
   const layout = resolveLayout(theme);
   const colors = { ...FALLBACK_COLORS, ...(theme?.config?.colors || {}) };
-  const sections = useMemo(() => resolveThemeSections(theme), [theme]);
+  const sections = useMemo(
+    () => resolveThemeSections(theme, sectionOverridesFrom(event, branding)),
+    [theme, event, branding]
+  );
 
   const [watching, setWatching] = useState(true);
   const embed = useMemo(() => youtubeEmbedUrl(youtube), [youtube]);

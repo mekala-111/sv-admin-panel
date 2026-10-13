@@ -1,63 +1,59 @@
 "use client";
 
 import CinematicLiveTheme from "./CinematicLiveTheme";
+import CustomThemeBlocks from "./CustomThemeBlocks";
 import EventThemeShell from "./EventThemeShell";
 import SacredGardenTheme from "./SacredGardenTheme";
 import TraditionalStreamingTheme from "./TraditionalStreamingTheme";
 import WeddingThemeTraditional from "./WeddingThemeTraditional";
+
+/** Exact layout keys (admin theme.config.layout). Checked before any fuzzy matching. */
+const EXACT_LAYOUTS = {
+  "wedding-theme-traditional": "wedding",
+  "telugu-wedding-traditional": "wedding",
+  "traditional-streaming": "streaming",
+  "the-sacred-garden": "sacred",
+  cinematic: "cinematic",
+  "cinematic-live": "cinematic",
+};
 
 function resolveLayoutKey(theme) {
   const config = theme?.config && typeof theme.config === "object" ? theme.config : {};
   return config.layout || config.preset || theme?.slug || theme?.name || null;
 }
 
-function isWeddingTraditionalLayout(layout, key) {
-  return (
-    layout === "wedding-theme-traditional" ||
-    layout === "telugu-wedding-traditional" ||
-    key.includes("wedding-traditional") ||
-    key.includes("telugu-wedding")
-  );
+/** Fuzzy fallback for older themes whose layout is only implied by slug/name. */
+function resolveRenderer(layout) {
+  if (!layout) return "shell";
+  const key = String(layout).toLowerCase();
+  if (EXACT_LAYOUTS[key]) return EXACT_LAYOUTS[key];
+  if (key.includes("wedding-traditional") || key.includes("telugu-wedding")) return "wedding";
+  if (key.includes("sacred-garden") || key.includes("sacredgarden")) return "sacred";
+  if (key.includes("traditional-streaming")) return "streaming";
+  if (key.includes("cinematic")) return "cinematic";
+  return "shell";
 }
 
-function isTraditionalStreamingLayout(layout, key) {
-  return (
-    layout === "traditional-streaming" ||
-    key.includes("traditional-streaming") ||
-    (key.includes("streaming") && !key.includes("cinematic"))
-  );
-}
-
-function isSacredGardenLayout(layout, key) {
-  return (
-    layout === "the-sacred-garden" ||
-    key.includes("sacred-garden") ||
-    key.includes("sacredgarden")
-  );
-}
-
-function isCinematicLayout(layout, key) {
-  return layout === "cinematic" || layout === "cinematic-live" || key.includes("cinematic");
+function renderLayout(renderer, props) {
+  switch (renderer) {
+    case "wedding":
+      return <WeddingThemeTraditional {...props} />;
+    case "streaming":
+      return <TraditionalStreamingTheme {...props} />;
+    case "sacred":
+      return <SacredGardenTheme {...props} />;
+    case "cinematic":
+      return <CinematicLiveTheme {...props} />;
+    default:
+      return <EventThemeShell {...props} />;
+  }
 }
 
 export default function EventThemeRenderer(props) {
-  const layout = resolveLayoutKey(props.theme);
-  const key = layout ? String(layout).toLowerCase() : "";
-
-  if (!layout) {
-    return <EventThemeShell {...props} />;
-  }
-  if (isWeddingTraditionalLayout(layout, key)) {
-    return <WeddingThemeTraditional {...props} />;
-  }
-  if (isTraditionalStreamingLayout(layout, key)) {
-    return <TraditionalStreamingTheme {...props} />;
-  }
-  if (isSacredGardenLayout(layout, key)) {
-    return <SacredGardenTheme {...props} />;
-  }
-  if (isCinematicLayout(layout, key)) {
-    return <CinematicLiveTheme {...props} />;
-  }
-  return <EventThemeShell {...props} />;
+  return (
+    <>
+      {renderLayout(resolveRenderer(resolveLayoutKey(props.theme)), props)}
+      <CustomThemeBlocks {...props} />
+    </>
+  );
 }

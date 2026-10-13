@@ -47,6 +47,8 @@ export function buildEventShareText({
   timeLine?: string;
   placeLine?: string;
 }) {
+  // No leading URL — desktop Chrome "Copy" after a file share prepends a local
+  // WebShare path and glues it onto whatever starts the text.
   const lines = [
     coupleLine ? `🌸 ${coupleLine} 🌸` : null,
     tagline || title || "You're invited to celebrate with us!",
@@ -100,7 +102,7 @@ export async function shareEventWithImage({
 }) {
   const message = text || url;
   const openWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   };
 
   const absoluteImage = absoluteShareImageUrl(imageUrl);
@@ -114,6 +116,7 @@ export async function shareEventWithImage({
         const type = blob.type && blob.type.startsWith("image/") ? blob.type : "image/png";
         const file = new File([blob], fileName, { type });
         if (navigator.canShare?.({ files: [file] })) {
+          // Text only — URL is already inside message. Passing both can duplicate.
           await navigator.share({ files: [file], text: message, title: title || undefined });
           return;
         }
@@ -125,6 +128,7 @@ export async function shareEventWithImage({
 
   if (typeof navigator.share === "function") {
     try {
+      // Prefer text-only payload so "Copy" stays clean on desktop Chrome.
       await navigator.share({ text: message, title: title || undefined });
       return;
     } catch (err) {

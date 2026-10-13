@@ -6,7 +6,6 @@ import type {
 } from "@/themes/theme-templates";
 import {
   getThemeTemplate,
-  resolveThemeFields,
   resolveThemeSections,
   THEME_TEMPLATES,
 } from "@/themes/theme-templates";
